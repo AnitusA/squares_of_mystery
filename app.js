@@ -112,22 +112,22 @@
     // create empty board
     const tiles = Array.from({length:BOARD_SIZE}, (_,i)=>({pos:i+1,type:'empty'}));
 
-    // First 50 (1..50): place only task tiles, no snakes or empty tiles
+    // First 50 (1..50): place 15 dare, 15 quiz, 7 hex, 7 treasure -> 44 special, 6 empty
     const firstCount = 50;
     const pool = [];
     pool.push(...Array(15).fill('dare'));
     pool.push(...Array(15).fill('quiz'));
-    pool.push(...Array(10).fill('hex'));
-    pool.push(...Array(10).fill('treasure'));
-    // fill remaining to reach firstCount with task tiles
+    pool.push(...Array(7).fill('hex'));
+    pool.push(...Array(7).fill('treasure'));
+    // fill remaining to reach firstCount with 'empty'
     while(pool.length < firstCount) pool.push('empty');
     // assign randomly into first 50 slots
     for(let i=0;i<firstCount;i++){ const t = pool.splice(randInt(0,pool.length-1),1)[0]; tiles[i].type = t }
 
-    // Last 17 (51..67): 7 snake tiles, rest empty
-    const nextRangeIdx = Array.from({length:BOARD_SIZE - firstCount},(_,i)=>firstCount + i);
+    // Next 10 (51..60): 4 snake (minus points), rest empty
+    const nextRangeIdx = Array.from({length:10},(_,i)=>firstCount + i);
     const snakeSlots = new Set();
-    while(snakeSlots.size < 7) snakeSlots.add(nextRangeIdx[randInt(0,nextRangeIdx.length-1)]);
+    while(snakeSlots.size < 4) snakeSlots.add(nextRangeIdx[randInt(0,nextRangeIdx.length-1)]);
     for(const idx of nextRangeIdx){ if(snakeSlots.has(idx)) tiles[idx].type = 'snake'; }
 
     // remaining are empty
