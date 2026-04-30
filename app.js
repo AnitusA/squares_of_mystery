@@ -7,9 +7,6 @@
   const addTeamBtn = document.getElementById('addTeam');
   const teamNameInput = document.getElementById('teamName');
   const teamMembersInput = document.getElementById('teamMembers');
-  const daresEl = document.getElementById('dares');
-  const treasuresEl = document.getElementById('treasures');
-  const saveContentBtn = document.getElementById('saveContent');
   const resetBoardBtn = document.getElementById('resetBoard');
   const boardEl = document.getElementById('board');
   const teamsStatusEl = document.getElementById('teamsStatus');
@@ -31,17 +28,9 @@
     board: null,
     teams: [],
     currentIndex: 0,
-    content: { dares: [], treasures: [] },
     history: [], // {type,text,team,pos,ts}
     winners: [] // first three teams to reach 67
   };
-
-  // simple hardcoded quiz list (editable in code)
-  const QUIZ = [
-    {q:'Capital of France?', a:'paris', points:10},
-    {q:'2+2*2 = ?', a:'6', points:5},
-    {q:'Color of the sky on clear day?', a:'blue', points:5}
-  ];
 
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); updateSavedLabel(); }
   function load() { const s = localStorage.getItem(STORAGE_KEY); if (s) state = JSON.parse(s); updateSavedLabel(); }
@@ -128,53 +117,38 @@
   function showModal(title, bodyHTML, showComplete=false, onComplete=null){
     modalTitle.textContent = title; modalBody.innerHTML = bodyHTML;
     modal.classList.remove('hidden');
+    modalOk.classList.toggle('hidden', showComplete);
     modalOk.onclick = ()=>{ modal.classList.add('hidden'); if(!showComplete) nextTurn(); }
     if(showComplete){ modalComplete.classList.remove('hidden'); modalComplete.onclick = ()=>{ modal.classList.add('hidden'); if(onComplete) onComplete(); nextTurn(); }} else { modalComplete.classList.add('hidden'); modalComplete.onclick = null }
   }
 
   function handleTile(team, tile){
-    let entryText = '';
+    let entryText = tile.type;
     if(tile.type === 'dare'){
-      const list = state.content.dares.length ? state.content.dares : ['Do a team photo with a funny face','Sing a short song'];
-      entryText = list[randInt(0,list.length-1)];
-      state.history.push({type:'dare', text:entryText, team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Dare!', `<p>${entryText}</p>`, true, ()=>{ team.points = (team.points||0) + 10 });
+      state.history.push({type:'dare', text:'dare', team:team.name, pos:tile.pos, ts:Date.now()});
+      showModal('Dare', '<p>Offline dare challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 10 });
     } else if(tile.type === 'treasure'){
-      const list = state.content.treasures.length ? state.content.treasures : ['Small treasure: +15 points','Find a hidden token: +20 points'];
-      entryText = list[randInt(0,list.length-1)];
-      state.history.push({type:'treasure', text:entryText, team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Treasure', `<p>${entryText}</p>`, true, ()=>{ team.points = (team.points||0) + 15 });
+      state.history.push({type:'treasure', text:'treasure', team:team.name, pos:tile.pos, ts:Date.now()});
+      showModal('Treasure', '<p>Offline treasure challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 15 });
     } else if(tile.type === 'quiz'){
-      const q = QUIZ[randInt(0,QUIZ.length-1)];
-      entryText = q.q;
-      state.history.push({type:'quiz', text:entryText, team:team.name, pos:tile.pos, ts:Date.now()});
-      modal.classList.remove('hidden');
-      modalTitle.textContent = 'Quiz';
-      modalBody.innerHTML = `<p>${q.q}</p><input id="quizAns" placeholder="answer" />`;
-      modalOk.onclick = ()=>{
-        const ans = document.getElementById('quizAns').value.trim().toLowerCase();
-        if(ans === q.a.toLowerCase()){ team.points = (team.points||0) + (q.points||5); alert('Correct! +' + (q.points||5) + ' points') } else { alert('Wrong answer') }
-        modal.classList.add('hidden'); nextTurn(); save(); renderTeams(); renderHall();
-      }
-      modalComplete.classList.add('hidden');
+      state.history.push({type:'quiz', text:'quiz', team:team.name, pos:tile.pos, ts:Date.now()});
+      showModal('Quiz', '<p>Offline quiz challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 10 });
     } else if(tile.type === 'hex'){
-      // give small random bonus
       const bonus = randInt(5,20);
-      entryText = `Hex +${bonus}`;
-      state.history.push({type:'hex', text:entryText, team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Hex', `<p>Hex effect: +${bonus} points</p>`, false, null);
-      team.points = (team.points||0) + bonus;
+      entryText = `hex`;
+      state.history.push({type:'hex', text:'hex', team:team.name, pos:tile.pos, ts:Date.now()});
+      showModal('Hex', `<p>Offline hex challenge</p><p class="small">Complete it, then press Completed. Bonus: +${bonus} points</p>`, true, ()=>{ team.points = (team.points||0) + bonus; });
     } else if(tile.type === 'snake'){
       const loss = randInt(6,15);
-      entryText = `Snake -${loss}`;
-      state.history.push({type:'snake', text:entryText, team:team.name, pos:tile.pos, ts:Date.now()});
+      entryText = 'snake';
+      state.history.push({type:'snake', text:'snake', team:team.name, pos:tile.pos, ts:Date.now()});
       team.points = Math.max(0,(team.points||0) - loss);
-      showModal('Snake!', `<p>Unlucky! -${loss} points</p>`, false, null);
+      showModal('Snake', `<p>Snake penalty: -${loss} points</p><p class="small">Press Completed to continue.</p>`, true, null);
     } else {
       // nothing
       entryText = 'Empty';
       state.history.push({type:'empty', text:entryText, team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Nothing', `<p>Empty tile.</p>`, false, null);
+      showModal('Nothing', `<p>Empty tile.</p><p class="small">Press Completed to continue.</p>`, true, null);
     }
     // generate hall url payload and place into hallUrl input
     if((team.pos || 0) >= BOARD_SIZE && !state.winners.includes(team.name) && state.winners.length < 3){
@@ -238,12 +212,6 @@
     state.teams.push({name,members,points:0,pos:0}); teamNameInput.value=''; teamMembersInput.value=''; save(); renderTeams();
   });
 
-  saveContentBtn.addEventListener('click', ()=>{
-    state.content.dares = daresEl.value.split('\n').map(s=>s.trim()).filter(Boolean);
-    state.content.treasures = treasuresEl.value.split('\n').map(s=>s.trim()).filter(Boolean);
-    save(); alert('Saved content');
-  });
-
   resetBoardBtn.addEventListener('click', ()=>{ if(confirm('Randomize board?')){ state.board = generateBoard(); save(); renderBoard(); } });
 
   assignBtn.addEventListener('click', ()=>{
@@ -269,8 +237,6 @@
         window.location.href = 'login.html';
       });
     }
-  // populate content inputs
-  daresEl.value = state.content.dares.join('\n'); treasuresEl.value = state.content.treasures.join('\n');
   renderBoard(); renderTeams(); renderWinners();
   renderHall();
 

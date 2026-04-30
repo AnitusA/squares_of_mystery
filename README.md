@@ -17,15 +17,14 @@ Features
 - Admin password: `02052004`
 - Hall login: no password
 - 67 tiles board generated once and persisted in localStorage
-- Admin panel: create teams, add dares/treasures (one per line)
+- Admin panel: create teams and control the board
 - First 50 tiles randomized with: 15 dares, 15 quizzes, 7 hex, 7 treasures (rest empty)
 - Tiles 41-50 include 4 snake (minus 6-15 points) and others empty
 - Last tiles empty
 - Dice roll to move current team; modal displays events
 - Use real dice and enter the rolled number in the admin UI (`moveSteps`) then press `Move`.
 - The Hall page is display-only and follows the latest tile update from the same origin.
-- Dare / Treasure show a "Completed" flow (gives points on completion)
-- Quiz questions are hardcoded in `app.js` (editable)
+- Dare, Quiz, Hex, Treasure, and Snake only show an event label plus a `Completed` button.
 
 Notes / next steps
 
