@@ -32,7 +32,8 @@
     teams: [],
     currentIndex: 0,
     content: { dares: [], treasures: [] },
-    history: [] // {type,text,team,pos,ts}
+    history: [], // {type,text,team,pos,ts}
+    winners: [] // first three teams to reach 67
   };
 
   // simple hardcoded quiz list (editable in code)
@@ -80,7 +81,11 @@
     state.board.forEach(tile => {
       const d = document.createElement('div');
       d.className = 'tile type-'+(tile.type||'empty');
-      d.innerHTML = `<div class="num">${tile.pos}</div><div>${tile.type}</div>`;
+      const onTileTeams = state.teams
+        .filter(team => (team.pos || 0) === tile.pos)
+        .map(team => team.name.slice(0, 2).toUpperCase())
+        .join(' ');
+      d.innerHTML = `<div class="num">${tile.pos}</div><div>${tile.type}</div>${onTileTeams ? `<div class="small">${onTileTeams}</div>` : ''}`;
       boardEl.appendChild(d);
     });
   }
@@ -95,12 +100,27 @@
       teamListEl.appendChild(li);
 
       const li2 = document.createElement('li');
-      li2.innerHTML = `<strong>${t.name}</strong> — pos: ${t.pos||0} pts: ${t.points||0}`;
+      li2.innerHTML = `<strong>${t.name}</strong> — pos: ${t.pos||0} pts: ${t.points||0}${state.winners.includes(t.name) ? ' <strong>(Winner)</strong>' : ''}`;
       teamsStatusEl.appendChild(li2);
 
       const opt = document.createElement('option'); opt.value = i; opt.textContent = t.name; assignTeam.appendChild(opt);
     });
     currentTeamEl.textContent = state.teams[state.currentIndex] ? state.teams[state.currentIndex].name : '—';
+  }
+
+  function renderWinners(){
+    let winnersEl = document.getElementById('winnersList');
+    if(!winnersEl) return;
+    winnersEl.innerHTML = '';
+    if(!state.winners.length){
+      winnersEl.innerHTML = '<li class="small">No winners yet</li>';
+      return;
+    }
+    state.winners.forEach((name, index) => {
+      const item = document.createElement('li');
+      item.innerHTML = `<strong>#${index + 1}</strong> ${name}`;
+      winnersEl.appendChild(item);
+    });
   }
 
   function nextTurn(){ state.currentIndex = (state.currentIndex+1) % Math.max(1,state.teams.length); save(); renderTeams(); }
@@ -157,7 +177,11 @@
       showModal('Nothing', `<p>Empty tile.</p>`, false, null);
     }
     // generate hall url payload and place into hallUrl input
-    save(); renderTeams(); renderHall();
+    if((team.pos || 0) >= BOARD_SIZE && !state.winners.includes(team.name) && state.winners.length < 3){
+      state.winners.push(team.name);
+      alert(`${team.name} reached ${BOARD_SIZE} and won!`);
+    }
+    save(); renderTeams(); renderWinners(); renderHall(); renderBoard();
     try{ const payload = {type: tile.type, text: entryText || tile.type, team: team.name, pos: tile.pos, ts: Date.now() };
       const enc = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
       const url = window.location.origin + window.location.pathname.replace(/index.html$/,'') + 'hall.html#' + enc;
@@ -185,11 +209,6 @@
       shown++;
     }
   }
-
-  // gameplay: roll dice and move current team
-  rollBtn.addEventListener('click', ()=>{
-    // (old roll handler removed)
-  });
 
   // Manual move handler: user rolls real dice and enters steps
   const moveBtn = document.getElementById('moveBtn');
@@ -237,9 +256,10 @@
   // load or initialize
   load();
   if(!state.board) state.board = generateBoard();
+  if(!Array.isArray(state.winners)) state.winners = [];
   // populate content inputs
   daresEl.value = state.content.dares.join('\n'); treasuresEl.value = state.content.treasures.join('\n');
-  renderBoard(); renderTeams();
+  renderBoard(); renderTeams(); renderWinners();
   renderHall();
 
   // copy/open hall url buttons
