@@ -48,6 +48,11 @@
       <div class="game-top">
         <div>Current turn: <strong id="currentTeam">—</strong></div>
         <div style="display:flex;gap:8px;align-items:center">
+          <label class="small">Set turn to:</label>
+          <select id="turnTeam" style="width:160px"></select>
+          <button id="setTurnBtn">Set Turn</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
           <label class="small">Manual dice (enter result):</label>
           <input id="moveSteps" placeholder="e.g. 4" style="width:80px" />
           <button id="moveBtn">Move</button>
