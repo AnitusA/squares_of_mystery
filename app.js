@@ -1,12 +1,13 @@
 (() => {
   const BOARD_SIZE = 67;
-  const STORAGE_KEY = 'squares_state_v1';
+  const STORAGE_KEY = 'squares_state_v2';
 
   // elements
   const teamListEl = document.getElementById('teamList');
   const addTeamBtn = document.getElementById('addTeam');
   const teamNameInput = document.getElementById('teamName');
   const teamMembersInput = document.getElementById('teamMembers');
+  const teamColorSelect = document.getElementById('teamColor');
   const resetBoardBtn = document.getElementById('resetBoard');
   const boardEl = document.getElementById('board');
   const teamsStatusEl = document.getElementById('teamsStatus');
@@ -25,12 +26,50 @@
 
   // game state
   let state = {
+    version: 2,
     board: null,
     teams: [],
     currentIndex: 0,
     history: [], // {type,text,team,pos,ts}
     winners: [] // first three teams to reach 67
   };
+
+  const TEAM_COLORS = [
+    { name: 'Red', value: '#ef4444' },
+    { name: 'Orange', value: '#f97316' },
+    { name: 'Amber', value: '#f59e0b' },
+    { name: 'Yellow', value: '#eab308' },
+    { name: 'Lime', value: '#84cc16' },
+    { name: 'Green', value: '#22c55e' },
+    { name: 'Emerald', value: '#10b981' },
+    { name: 'Teal', value: '#14b8a6' },
+    { name: 'Cyan', value: '#06b6d4' },
+    { name: 'Sky', value: '#0ea5e9' },
+    { name: 'Blue', value: '#3b82f6' },
+    { name: 'Indigo', value: '#6366f1' },
+    { name: 'Violet', value: '#8b5cf6' },
+    { name: 'Purple', value: '#a855f7' },
+    { name: 'Fuchsia', value: '#d946ef' },
+    { name: 'Pink', value: '#ec4899' },
+    { name: 'Rose', value: '#f43f5e' },
+    { name: 'Slate', value: '#64748b' },
+    { name: 'Stone', value: '#78716c' },
+    { name: 'Zinc', value: '#52525b' }
+  ];
+
+  function initColorPicker(){
+    if(!teamColorSelect) return;
+    teamColorSelect.innerHTML = '';
+    TEAM_COLORS.forEach((color, index) => {
+      const option = document.createElement('option');
+      option.value = color.value;
+      option.textContent = color.name;
+      option.style.background = color.value;
+      option.style.color = '#fff';
+      if(index === 0) option.selected = true;
+      teamColorSelect.appendChild(option);
+    });
+  }
 
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); updateSavedLabel(); }
   function load() { const s = localStorage.getItem(STORAGE_KEY); if (s) state = JSON.parse(s); updateSavedLabel(); }
@@ -72,9 +111,9 @@
       d.className = 'tile type-'+(tile.type||'empty');
       const onTileTeams = state.teams
         .filter(team => (team.pos || 0) === tile.pos)
-        .map(team => team.name.slice(0, 2).toUpperCase())
-        .join(' ');
-      d.innerHTML = `<div class="num">${tile.pos}</div><div>${tile.type}</div>${onTileTeams ? `<div class="small">${onTileTeams}</div>` : ''}`;
+        .map(team => `<span class="team-coin" title="${team.name}" style="background:${team.color || '#64748b'}">${team.name.slice(0, 1).toUpperCase()}</span>`)
+        .join('');
+      d.innerHTML = `<div class="num">${tile.pos}</div><div>${tile.type}</div>${onTileTeams ? `<div class="team-coins">${onTileTeams}</div>` : ''}`;
       boardEl.appendChild(d);
     });
   }
@@ -85,11 +124,11 @@
     assignTeam.innerHTML = '';
     state.teams.forEach((t,i)=>{
       const li = document.createElement('li');
-      li.textContent = `${t.name} (${t.members.length} members)`;
+      li.innerHTML = `<span class="team-swatch" style="background:${t.color || '#64748b'}"></span><span>${t.name} (${t.members.length} members)</span>`;
       teamListEl.appendChild(li);
 
       const li2 = document.createElement('li');
-      li2.innerHTML = `<strong>${t.name}</strong> — pos: ${t.pos||0} pts: ${t.points||0}${state.winners.includes(t.name) ? ' <strong>(Winner)</strong>' : ''}`;
+      li2.innerHTML = `<span class="team-swatch" style="background:${t.color || '#64748b'}"></span><strong>${t.name}</strong> — pos: ${t.pos||0} pts: ${t.points||0}${state.winners.includes(t.name) ? ' <strong>(Winner)</strong>' : ''}`;
       teamsStatusEl.appendChild(li2);
 
       const opt = document.createElement('option'); opt.value = i; opt.textContent = t.name; assignTeam.appendChild(opt);
@@ -209,7 +248,8 @@
   addTeamBtn.addEventListener('click', ()=>{
     const name = teamNameInput.value.trim(); if(!name) return alert('Enter name');
     const members = teamMembersInput.value.split(',').map(s=>s.trim()).filter(Boolean);
-    state.teams.push({name,members,points:0,pos:0}); teamNameInput.value=''; teamMembersInput.value=''; save(); renderTeams();
+    const color = teamColorSelect ? teamColorSelect.value : TEAM_COLORS[0].value;
+    state.teams.push({name,members,color,points:0,pos:0}); teamNameInput.value=''; teamMembersInput.value=''; if(teamColorSelect) teamColorSelect.value = TEAM_COLORS[0].value; save(); renderTeams(); renderBoard();
   });
 
   resetBoardBtn.addEventListener('click', ()=>{ if(confirm('Randomize board?')){ state.board = generateBoard(); save(); renderBoard(); } });
@@ -230,6 +270,7 @@
   load();
   if(!state.board) state.board = generateBoard();
   if(!Array.isArray(state.winners)) state.winners = [];
+  initColorPicker();
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => {
