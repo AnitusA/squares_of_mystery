@@ -224,6 +224,7 @@
 
     readLatest();
     renderBoard();
+    renderLeaderboard();
     window.addEventListener('storage', (event) => {
       if (event.key === 'som_latest_event_v1' && event.newValue) {
         try {
@@ -234,11 +235,13 @@
       }
       if (event.key === stateKey) {
         renderBoard();
+        renderLeaderboard();
       }
     });
 
     setInterval(readLatest, 1000);
     setInterval(renderBoard, 1000);
+    setInterval(renderLeaderboard, 1000);
 
   </script>
 </body>
