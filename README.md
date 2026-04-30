@@ -18,8 +18,8 @@ Features
 - Hall login: no password
 - 67 tiles board generated once and persisted in localStorage
 - Admin panel: create teams and control the board
-- First 45 tiles randomized with: 15 dares, 10 quizzes, 10 hex, 10 treasures (no 3-in-a-row of same type)
-- Last 22 tiles contain 12 randomized snakes, 10 empty, with last 4 tiles always empty
+- First 45 tiles randomized with: 15 dares, 10 quizzes, 10 hex, 10 treasures (no 3-in-a-row)
+- Last 22 tiles contain 9 randomized snakes, 9 empty, with last 4 tiles always empty (no 3-in-a-row)
 - Dice roll to move current team; modal displays events
 - Use real dice and enter the rolled number in the admin UI (`moveSteps`) then press `Move`.
 - The Hall page is display-only and follows the latest tile update from the same origin.

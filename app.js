@@ -126,7 +126,7 @@
       const shuffled = [...pool].sort(() => Math.random() - 0.5);
       for(let i=0;i<firstCount;i++) tiles[i].type = shuffled[i];
       
-      // Check for 3-in-a-row
+      // Check for 3-in-a-row in first section
       valid = true;
       for(let i=0;i<firstCount-2;i++){
         if(tiles[i].type === tiles[i+1].type && tiles[i+1].type === tiles[i+2].type){
@@ -136,19 +136,30 @@
       }
     }
 
-    // Last 22 (46..67): 12 snakes randomized, last 4 always empty, rest empty
-    const lastStart = firstCount;
-    const lastEnd = firstCount + 21; // indices 45-66 (22 tiles)
+    // Last 22 (46..67): 9 snakes randomized in positions 46-63, last 4 always empty
+    const snakeRangeIndices = Array.from({length:18},(_,i) => firstCount + i); // 18 slots for snakes/empty (indices 45-62)
+    const snakePool = [];
+    snakePool.push(...Array(9).fill('snake'));
+    snakePool.push(...Array(9).fill('empty'));
     
-    // Last 4 tiles (64-67) are always empty, so only randomize snakes in positions 46-63
-    const snakeRangeIndices = Array.from({length:18},(_,i) => lastStart + i); // 18 slots for snakes
-    const snakeSlots = new Set();
-    while(snakeSlots.size < 12) snakeSlots.add(snakeRangeIndices[randInt(0,snakeRangeIndices.length-1)]);
-    for(const idx of snakeRangeIndices){ 
-      if(snakeSlots.has(idx)) tiles[idx].type = 'snake';
-      else tiles[idx].type = 'empty';
+    // Shuffle snakes/empty, avoiding 3-in-a-row
+    valid = false;
+    while(!valid){
+      const shuffled = [...snakePool].sort(() => Math.random() - 0.5);
+      for(let i=0;i<18;i++) tiles[firstCount + i].type = shuffled[i];
+      
+      // Check for 3-in-a-row in snake section
+      valid = true;
+      for(let i=firstCount;i<firstCount+16;i++){
+        if(tiles[i].type === tiles[i+1].type && tiles[i+1].type === tiles[i+2].type){
+          valid = false;
+          break;
+        }
+      }
     }
-    // Last 4 tiles (64-67) are always empty - already initialized to empty
+    
+    // Last 4 tiles (64-67) are always empty
+    for(let i=firstCount+18;i<BOARD_SIZE;i++) tiles[i].type = 'empty';
 
     return tiles;
   }
