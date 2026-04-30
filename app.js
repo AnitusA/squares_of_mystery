@@ -181,6 +181,16 @@
       state.winners.push(team.name);
       alert(`${team.name} reached ${BOARD_SIZE} and won!`);
     }
+    try{
+      localStorage.setItem('som_latest_event_v1', JSON.stringify({
+        type: tile.type,
+        text: entryText || tile.type,
+        team: team.name,
+        pos: tile.pos,
+        ts: Date.now(),
+        winners: state.winners
+      }));
+    }catch(e){ /* ignore shared display storage errors */ }
     save(); renderTeams(); renderWinners(); renderHall(); renderBoard();
   }
 
