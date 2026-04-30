@@ -59,10 +59,14 @@
     { name: 'Zinc', value: '#52525b' }
   ];
 
-  function initColorPicker(){
+  function refreshColorPicker(){
     if(!teamColorSelect) return;
+    const usedColors = new Set(state.teams.map(team => team.color).filter(Boolean));
+    const availableColors = TEAM_COLORS.filter(color => !usedColors.has(color.value));
+    const fallbackColor = availableColors[0] || TEAM_COLORS[0];
+    const previousValue = teamColorSelect.value;
     teamColorSelect.innerHTML = '';
-    TEAM_COLORS.forEach((color, index) => {
+    (availableColors.length ? availableColors : TEAM_COLORS).forEach((color, index) => {
       const option = document.createElement('option');
       option.value = color.value;
       option.textContent = color.name;
@@ -71,6 +75,11 @@
       if(index === 0) option.selected = true;
       teamColorSelect.appendChild(option);
     });
+    if (availableColors.length && availableColors.some(color => color.value === previousValue)) {
+      teamColorSelect.value = previousValue;
+    } else {
+      teamColorSelect.value = fallbackColor.value;
+    }
   }
 
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); updateSavedLabel(); }
@@ -165,6 +174,7 @@
       }
     });
     currentTeamEl.textContent = state.teams[state.currentIndex] ? state.teams[state.currentIndex].name : '—';
+    refreshColorPicker();
   }
 
   function renderWinners(){
@@ -320,7 +330,7 @@
   load();
   if(!state.board) state.board = generateBoard();
   if(!Array.isArray(state.winners)) state.winners = [];
-  initColorPicker();
+  refreshColorPicker();
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => {
