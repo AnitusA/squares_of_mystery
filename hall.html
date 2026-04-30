@@ -32,6 +32,50 @@
     .text { font-size: clamp(22px, 4vw, 34px); font-weight: 600; }
     .meta { margin-top: 16px; color: #b9c8e3; font-size: 14px; }
     .waiting { color: #9fb3d0; font-size: 22px; }
+    .board {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(11, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .tile {
+      min-height: 54px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    .tile .num {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      font-size: 12px;
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+    .coins {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: 75%;
+    }
+    .coin {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.18);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #fff;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -43,6 +87,7 @@
       <div class="text" id="tileText">-</div>
       <div class="meta" id="tileMeta">-</div>
     </div>
+    <div id="board" class="board"></div>
   </div>
 
   <script>
@@ -51,14 +96,43 @@
     const tileNumEl = document.getElementById('tileNum');
     const tileTextEl = document.getElementById('tileText');
     const tileMetaEl = document.getElementById('tileMeta');
+    const boardEl = document.getElementById('board');
+    const BOARD_SIZE = 67;
+    const stateKey = 'squares_state_v2';
 
     function render(payload) {
       if (!payload) return;
       waitingEl.hidden = true;
       displayEl.hidden = false;
       tileNumEl.textContent = payload.pos ?? '-';
-      tileTextEl.textContent = payload.text ?? payload.type ?? '-';
+      tileTextEl.textContent = payload.status === 'completed'
+        ? (payload.type ?? '-')
+        : 'Task hidden until completed';
       tileMetaEl.textContent = `${payload.team ?? 'Team'} · ${new Date(payload.ts || Date.now()).toLocaleTimeString()}`;
+    }
+
+    function readGameState() {
+      try {
+        return JSON.parse(localStorage.getItem(stateKey) || '{}');
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function renderBoard() {
+      const state = readGameState();
+      const teams = Array.isArray(state.teams) ? state.teams : [];
+      boardEl.innerHTML = '';
+      for (let pos = 1; pos <= BOARD_SIZE; pos++) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        const coins = teams
+          .filter(team => (team.pos || 0) === pos)
+          .map(team => `<span class="coin" title="${team.name}" style="background:${team.color || '#64748b'}">${team.name.slice(0,1).toUpperCase()}</span>`)
+          .join('');
+        tile.innerHTML = `<div class="num">${pos}</div>${coins ? `<div class="coins">${coins}</div>` : ''}`;
+        boardEl.appendChild(tile);
+      }
     }
 
     function readLatest() {
@@ -72,6 +146,7 @@
     }
 
     readLatest();
+    renderBoard();
     window.addEventListener('storage', (event) => {
       if (event.key === 'som_latest_event_v1' && event.newValue) {
         try {
@@ -80,9 +155,13 @@
           // ignore malformed storage
         }
       }
+      if (event.key === stateKey) {
+        renderBoard();
+      }
     });
 
     setInterval(readLatest, 1000);
+    setInterval(renderBoard, 1000);
 
   </script>
 </body>

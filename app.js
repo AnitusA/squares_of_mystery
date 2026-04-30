@@ -187,46 +187,50 @@
     let entryText = tile.type;
     if(tile.type === 'dare'){
       state.history.push({type:'dare', text:'dare', team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Dare', '<p>Offline dare challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 10 });
+      showModal('Dare', '<p>Offline dare challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 2; updateLatestEvent('dare', team, tile, 'completed'); });
     } else if(tile.type === 'treasure'){
       state.history.push({type:'treasure', text:'treasure', team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Treasure', '<p>Offline treasure challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 15 });
+      showModal('Treasure', '<p>Offline treasure challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 2; updateLatestEvent('treasure', team, tile, 'completed'); });
     } else if(tile.type === 'quiz'){
       state.history.push({type:'quiz', text:'quiz', team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Quiz', '<p>Offline quiz challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 10 });
+      showModal('Quiz', '<p>Offline quiz challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 2; updateLatestEvent('quiz', team, tile, 'completed'); });
     } else if(tile.type === 'hex'){
-      const bonus = randInt(5,20);
       entryText = `hex`;
       state.history.push({type:'hex', text:'hex', team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Hex', `<p>Offline hex challenge</p><p class="small">Complete it, then press Completed. Bonus: +${bonus} points</p>`, true, ()=>{ team.points = (team.points||0) + bonus; });
+      showModal('Hex', '<p>Offline hex challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ updateLatestEvent('hex', team, tile, 'completed'); });
     } else if(tile.type === 'snake'){
-      const loss = randInt(6,15);
+      const loss = randInt(5,10);
       entryText = 'snake';
       state.history.push({type:'snake', text:'snake', team:team.name, pos:tile.pos, ts:Date.now()});
       team.points = Math.max(0,(team.points||0) - loss);
-      showModal('Snake', `<p>Snake penalty: -${loss} points</p><p class="small">Press Completed to continue.</p>`, true, null);
+      showModal('Snake', `<p>Snake penalty: -${loss} points</p><p class="small">Press Completed to continue.</p>`, true, ()=>{ updateLatestEvent('snake', team, tile, 'completed'); });
     } else {
       // nothing
       entryText = 'Empty';
       state.history.push({type:'empty', text:entryText, team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Nothing', `<p>Empty tile.</p><p class="small">Press Completed to continue.</p>`, true, null);
+      showModal('Nothing', `<p>Empty tile.</p><p class="small">Press Completed to continue.</p>`, true, ()=>{ updateLatestEvent('empty', team, tile, 'completed'); });
     }
     // generate hall url payload and place into hallUrl input
     if((team.pos || 0) >= BOARD_SIZE && !state.winners.includes(team.name) && state.winners.length < 3){
       state.winners.push(team.name);
       alert(`${team.name} reached ${BOARD_SIZE} and won!`);
     }
+    updateLatestEvent(tile.type, team, tile, 'pending');
+    save(); renderTeams(); renderWinners(); renderHall(); renderBoard();
+  }
+
+  function updateLatestEvent(type, team, tile, status){
     try{
       localStorage.setItem('som_latest_event_v1', JSON.stringify({
-        type: tile.type,
-        text: entryText || tile.type,
+        type,
+        text: status === 'completed' ? type : 'hidden',
         team: team.name,
         pos: tile.pos,
+        status,
         ts: Date.now(),
         winners: state.winners
       }));
     }catch(e){ /* ignore shared display storage errors */ }
-    save(); renderTeams(); renderWinners(); renderHall(); renderBoard();
   }
 
   function renderHall(){
