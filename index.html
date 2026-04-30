@@ -58,6 +58,11 @@
         <h3>Teams</h3>
         <ul id="teamsStatus"></ul>
       </aside>
+
+      <aside id="winnersPanel" style="margin-top:12px;padding:8px;background:#fff;border-radius:8px;">
+        <h3>Winners</h3>
+        <ol id="winnersList"></ol>
+      </aside>
     </section>
     
     <section id="hallSection">
@@ -78,16 +83,6 @@
         <button id="modalComplete" class="hidden">Completed</button>
         <button id="modalOk">OK</button>
       </div>
-    </div>
-  </div>
-
-  <!-- Hall link area (generated after a tile event) -->
-  <div id="hallSend" style="position:fixed;right:18px;bottom:18px;background:#fff;padding:10px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-width:360px">
-    <div class="small">Send event to Hall display (copy the URL or QR it)</div>
-    <input id="hallUrl" placeholder="No event yet" readonly style="width:100%;margin-top:8px;padding:6px" />
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button id="copyHall">Copy URL</button>
-      <button id="openHall">Open Hall</button>
     </div>
   </div>
 

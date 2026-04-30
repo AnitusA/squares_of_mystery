@@ -182,11 +182,6 @@
       alert(`${team.name} reached ${BOARD_SIZE} and won!`);
     }
     save(); renderTeams(); renderWinners(); renderHall(); renderBoard();
-    try{ const payload = {type: tile.type, text: entryText || tile.type, team: team.name, pos: tile.pos, ts: Date.now() };
-      const enc = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      const url = window.location.origin + window.location.pathname.replace(/index.html$/,'') + 'hall.html#' + enc;
-      const hallInput = document.getElementById('hallUrl'); if(hallInput) hallInput.value = url;
-    }catch(e){ /* ignore */ }
   }
 
   function renderHall(){
@@ -263,10 +258,6 @@
   renderHall();
 
   // copy/open hall url buttons
-  const copyHallBtn = document.getElementById('copyHall');
-  const openHallBtn = document.getElementById('openHall');
-  copyHallBtn.addEventListener('click', ()=>{ const v = document.getElementById('hallUrl').value; if(!v) return alert('No Hall URL'); navigator.clipboard.writeText(v).then(()=>alert('Copied')); });
-  openHallBtn.addEventListener('click', ()=>{ const v = document.getElementById('hallUrl').value; if(!v) return alert('No Hall URL'); window.open(v,'_blank'); });
 
   // expose for debugging
   window._SOM = {state, save, generateBoard};
