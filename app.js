@@ -80,11 +80,15 @@
   function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min }
 
   function resetGame(){
-    state.board = generateBoard();
-    state.teams = [];
-    state.currentIndex = 0;
-    state.history = [];
-    state.winners = [];
+    try { localStorage.removeItem(STORAGE_KEY); } catch (error) { /* ignore */ }
+    state = {
+      version: 2,
+      board: generateBoard(),
+      teams: [],
+      currentIndex: 0,
+      history: [],
+      winners: []
+    };
     diceEl.textContent = '-';
     if (moveSteps) moveSteps.value = '';
     try { localStorage.removeItem('som_latest_event_v1'); } catch (error) { /* ignore */ }
