@@ -76,18 +76,65 @@
       color: #fff;
       font-weight: 700;
     }
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      margin: 8px 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .leaderboard-coin {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #fff;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .leaderboard-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .leaderboard-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .leaderboard-pos {
+      font-size: 12px;
+      color: #9fb3d0;
+      margin-top: 2px;
+    }
+    .leaderboard-points {
+      font-size: 20px;
+      font-weight: 700;
+      color: #60a5fa;
+    }
   </style>
 </head>
 <body>
-  <div class="screen">
-    <div class="label">Hall Display</div>
-    <div id="waiting" class="waiting">Waiting for the latest tile update...</div>
-    <div id="display" hidden>
-      <div class="num" id="tileNum">-</div>
-      <div class="text" id="tileText">-</div>
-      <div class="meta" id="tileMeta">-</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;width:min(98vw,1200px);margin:0 auto;padding:24px;align-items:start">
+    <div class="screen">
+      <div class="label">Current Tile</div>
+      <div id="waiting" class="waiting">Waiting for the latest tile update...</div>
+      <div id="display" hidden>
+        <div class="num" id="tileNum">-</div>
+        <div class="text" id="tileText">-</div>
+        <div class="meta" id="tileMeta">-</div>
+      </div>
+      <div id="board" class="board"></div>
     </div>
-    <div id="board" class="board"></div>
+    <div class="screen">
+      <div class="label">Leaderboard</div>
+      <div id="leaderboard" style="margin-top:16px"></div>
+    </div>
   </div>
 
   <script>
@@ -133,6 +180,36 @@
         tile.innerHTML = `<div class="num">${pos}</div>${coins ? `<div class="coins">${coins}</div>` : ''}`;
         boardEl.appendChild(tile);
       }
+    }
+
+    function renderLeaderboard() {
+      const state = readGameState();
+      const leaderboardEl = document.getElementById('leaderboard');
+      const teams = Array.isArray(state.teams) ? state.teams : [];
+      
+      leaderboardEl.innerHTML = '';
+      if (!teams.length) {
+        leaderboardEl.innerHTML = '<div style="color:#9fb3d0;font-size:14px">No teams yet</div>';
+        return;
+      }
+      
+      // Sort by points descending
+      const sorted = [...teams].sort((a, b) => (b.points || 0) - (a.points || 0));
+      
+      sorted.forEach((team, index) => {
+        const item = document.createElement('div');
+        item.className = 'leaderboard-item';
+        const medalEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+        item.innerHTML = `
+          <div class="leaderboard-coin" style="background:${team.color || '#64748b'}">${team.name.slice(0,1).toUpperCase()}</div>
+          <div class="leaderboard-info">
+            <div class="leaderboard-name">${medalEmoji} ${team.name}</div>
+            <div class="leaderboard-pos">Pos: ${team.pos || 0}</div>
+          </div>
+          <div class="leaderboard-points">${team.points || 0}</div>
+        `;
+        leaderboardEl.appendChild(item);
+      });
     }
 
     function readLatest() {

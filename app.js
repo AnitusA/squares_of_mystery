@@ -21,6 +21,7 @@
   const modalBody = document.getElementById('modalBody');
   const modalOk = document.getElementById('modalOk');
   const modalComplete = document.getElementById('modalComplete');
+  const modalNotComplete = document.getElementById('modalNotComplete');
   const assignTeam = document.getElementById('assignTeam');
   const assignPoints = document.getElementById('assignPoints');
   const assignBtn = document.getElementById('assignBtn');
@@ -235,25 +236,35 @@
     renderTeams();
   }
 
-  function showModal(title, bodyHTML, showComplete=false, onComplete=null){
+  function showModal(title, bodyHTML, showComplete=false, onComplete=null, onNotComplete=null){
     modalTitle.textContent = title; modalBody.innerHTML = bodyHTML;
     modal.classList.remove('hidden');
     modalOk.classList.toggle('hidden', showComplete);
     modalOk.onclick = ()=>{ modal.classList.add('hidden'); if(!showComplete) nextTurn(); }
-    if(showComplete){ modalComplete.classList.remove('hidden'); modalComplete.onclick = ()=>{ modal.classList.add('hidden'); if(onComplete) onComplete(); nextTurn(); }} else { modalComplete.classList.add('hidden'); modalComplete.onclick = null }
+    if(showComplete){
+      modalComplete.classList.remove('hidden');
+      modalNotComplete.classList.remove('hidden');
+      modalComplete.onclick = ()=>{ modal.classList.add('hidden'); if(onComplete) onComplete(); nextTurn(); };
+      modalNotComplete.onclick = ()=>{ modal.classList.add('hidden'); if(onNotComplete) onNotComplete(); nextTurn(); };
+    } else {
+      modalComplete.classList.add('hidden');
+      modalNotComplete.classList.add('hidden');
+      modalComplete.onclick = null;
+      modalNotComplete.onclick = null;
+    }
   }
 
   function handleTile(team, tile){
     let entryText = tile.type;
     if(tile.type === 'dare'){
       state.history.push({type:'dare', text:'dare', team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Dare', '<p>Offline dare challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 2; updateLatestEvent('dare', team, tile, 'completed'); });
+      showModal('Dare', '<p>Offline dare challenge</p><p class="small">Click Completed or Not Completed.</p>', true, ()=>{ team.points = (team.points||0) + 1; updateLatestEvent('dare', team, tile, 'completed'); }, ()=>{ updateLatestEvent('dare', team, tile, 'completed'); });
     } else if(tile.type === 'treasure'){
       state.history.push({type:'treasure', text:'treasure', team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Treasure', '<p>Offline treasure challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 2; updateLatestEvent('treasure', team, tile, 'completed'); });
+      showModal('Treasure', '<p>Offline treasure challenge</p><p class="small">Click Completed or Not Completed.</p>', true, ()=>{ team.points = (team.points||0) + 1; updateLatestEvent('treasure', team, tile, 'completed'); }, ()=>{ updateLatestEvent('treasure', team, tile, 'completed'); });
     } else if(tile.type === 'quiz'){
       state.history.push({type:'quiz', text:'quiz', team:team.name, pos:tile.pos, ts:Date.now()});
-      showModal('Quiz', '<p>Offline quiz challenge</p><p class="small">Complete it, then press Completed.</p>', true, ()=>{ team.points = (team.points||0) + 2; updateLatestEvent('quiz', team, tile, 'completed'); });
+      showModal('Quiz', '<p>Offline quiz challenge</p><p class="small">Click Completed or Not Completed.</p>', true, ()=>{ team.points = (team.points||0) + 1; updateLatestEvent('quiz', team, tile, 'completed'); }, ()=>{ updateLatestEvent('quiz', team, tile, 'completed'); });
     } else if(tile.type === 'hex'){
       entryText = `hex`;
       state.history.push({type:'hex', text:'hex', team:team.name, pos:tile.pos, ts:Date.now()});
@@ -342,7 +353,7 @@
 
   assignBtn.addEventListener('click', ()=>{
     const idx = Number(assignTeam.value); const pts = Number(assignPoints.value)||0; if(isNaN(idx)) return;
-    state.teams[idx].points = (state.teams[idx].points||0) + pts; save(); renderTeams();
+    state.teams[idx].points = (state.teams[idx].points||0) + pts; save(); renderTeams(); renderBoard(); renderHall();
   });
 
   if (setTurnBtn) {
