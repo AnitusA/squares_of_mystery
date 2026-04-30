@@ -12,6 +12,8 @@
   const boardEl = document.getElementById('board');
   const teamsStatusEl = document.getElementById('teamsStatus');
   const currentTeamEl = document.getElementById('currentTeam');
+  const turnTeamSelect = document.getElementById('turnTeam');
+  const setTurnBtn = document.getElementById('setTurnBtn');
   const rollBtn = document.getElementById('rollBtn');
   const diceEl = document.getElementById('dice');
   const modal = document.getElementById('modal');
@@ -122,6 +124,7 @@
     teamListEl.innerHTML = '';
     teamsStatusEl.innerHTML = '';
     assignTeam.innerHTML = '';
+    if (turnTeamSelect) turnTeamSelect.innerHTML = '';
     state.teams.forEach((t,i)=>{
       const li = document.createElement('li');
       li.innerHTML = `<span class="team-swatch" style="background:${t.color || '#64748b'}"></span><span>${t.name} (${t.members.length} members)</span>`;
@@ -132,6 +135,14 @@
       teamsStatusEl.appendChild(li2);
 
       const opt = document.createElement('option'); opt.value = i; opt.textContent = t.name; assignTeam.appendChild(opt);
+
+      if (turnTeamSelect) {
+        const turnOpt = document.createElement('option');
+        turnOpt.value = i;
+        turnOpt.textContent = t.name;
+        if (i === state.currentIndex) turnOpt.selected = true;
+        turnTeamSelect.appendChild(turnOpt);
+      }
     });
     currentTeamEl.textContent = state.teams[state.currentIndex] ? state.teams[state.currentIndex].name : '—';
   }
@@ -152,6 +163,17 @@
   }
 
   function nextTurn(){ state.currentIndex = (state.currentIndex+1) % Math.max(1,state.teams.length); save(); renderTeams(); }
+
+  function setManualTurn(index){
+    if (!state.teams.length) return alert('Add teams first');
+    const nextIndex = Number(index);
+    if (Number.isNaN(nextIndex) || nextIndex < 0 || nextIndex >= state.teams.length) {
+      return alert('Select a valid team');
+    }
+    state.currentIndex = nextIndex;
+    save();
+    renderTeams();
+  }
 
   function showModal(title, bodyHTML, showComplete=false, onComplete=null){
     modalTitle.textContent = title; modalBody.innerHTML = bodyHTML;
@@ -258,6 +280,10 @@
     const idx = Number(assignTeam.value); const pts = Number(assignPoints.value)||0; if(isNaN(idx)) return;
     state.teams[idx].points = (state.teams[idx].points||0) + pts; save(); renderTeams();
   });
+
+  if (setTurnBtn) {
+    setTurnBtn.addEventListener('click', ()=> setManualTurn(turnTeamSelect.value));
+  }
 
   modalOk.addEventListener('click', ()=>{ modal.classList.add('hidden'); nextTurn(); });
 
