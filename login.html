@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login - Square of Mysteries</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: Segoe UI, Arial, sans-serif;
+      background: linear-gradient(135deg, #07111f, #102a43);
+      color: #fff;
+    }
+    .wrap {
+      width: min(92vw, 840px);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: rgba(8, 16, 35, 0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+    }
+    h1 { margin: 0 0 8px; }
+    p { margin: 0 0 16px; color: #b6c6df; }
+    label { display: block; margin: 12px 0 6px; color: #dbe7ff; font-size: 14px; }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #30445f;
+      background: #0c1729;
+      color: #fff;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 10px;
+      background: #60a5fa;
+      color: #04111f;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .small { margin-top: 10px; font-size: 12px; color: #93a9c9; }
+    .error { margin-top: 10px; color: #fca5a5; min-height: 18px; font-size: 13px; }
+    .tag { display:inline-block; padding:4px 10px; border-radius:999px; background:#17324f; color:#d7e6ff; font-size:12px; margin-bottom:12px; }
+  </style>
+  <script src="auth.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="tag">Admin Site</div>
+      <h1>Admin Login</h1>
+      <p>Open the board, manage teams, and advance the game.</p>
+      <label for="adminPass">Password</label>
+      <input id="adminPass" type="password" placeholder="Enter admin password" />
+      <button id="adminBtn">Enter Admin</button>
+      <div class="error" id="adminError"></div>
+    </div>
+
+    <div class="card">
+      <div class="tag">Hall Display</div>
+      <h1>Hall Login</h1>
+      <p>Open the display screen for live tile updates and winners.</p>
+      <label for="hallPass">Password</label>
+      <input id="hallPass" type="password" placeholder="Enter hall password" />
+      <button id="hallBtn">Enter Hall</button>
+      <div class="error" id="hallError"></div>
+    </div>
+  </div>
+
+  <script>
+    const ADMIN_PASSWORD = 'admin123';
+    const HALL_PASSWORD = 'hall123';
+
+    const next = new URLSearchParams(window.location.search).get('next');
+
+    function go(role, target) {
+      SOM_AUTH.setRole(role);
+      window.location.href = target || (role === 'admin' ? 'index.html' : 'hall.html');
+    }
+
+    document.getElementById('adminBtn').addEventListener('click', () => {
+      const pass = document.getElementById('adminPass').value.trim();
+      const error = document.getElementById('adminError');
+      error.textContent = '';
+      if (pass !== ADMIN_PASSWORD) {
+        error.textContent = 'Invalid admin password';
+        return;
+      }
+      go('admin', next === 'hall.html' ? 'index.html' : next || 'index.html');
+    });
+
+    document.getElementById('hallBtn').addEventListener('click', () => {
+      const pass = document.getElementById('hallPass').value.trim();
+      const error = document.getElementById('hallError');
+      error.textContent = '';
+      if (pass !== HALL_PASSWORD) {
+        error.textContent = 'Invalid hall password';
+        return;
+      }
+      go('hall', next === 'index.html' ? 'hall.html' : next || 'hall.html');
+    });
+  </script>
+</body>
+</html>
