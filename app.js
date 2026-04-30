@@ -112,23 +112,44 @@
     // create empty board
     const tiles = Array.from({length:BOARD_SIZE}, (_,i)=>({pos:i+1,type:'empty'}));
 
-    // First 46 (1..46): place 14 dare, 14 quiz, 9 hex, 9 treasure
-    const firstCount = 46;
+    // First 45 (1..45): place 15 dare, 10 quiz, 10 hex, 10 treasure
+    const firstCount = 45;
     const pool = [];
-    pool.push(...Array(14).fill('dare'));
-    pool.push(...Array(14).fill('quiz'));
-    pool.push(...Array(9).fill('hex'));
-    pool.push(...Array(9).fill('treasure'));
-    // assign randomly into the first 46 slots
-    for(let i=0;i<firstCount;i++){ const t = pool.splice(randInt(0,pool.length-1),1)[0]; tiles[i].type = t }
+    pool.push(...Array(15).fill('dare'));
+    pool.push(...Array(10).fill('quiz'));
+    pool.push(...Array(10).fill('hex'));
+    pool.push(...Array(10).fill('treasure'));
+    
+    // Shuffle into first 45 slots, avoiding 3-in-a-row
+    let valid = false;
+    while(!valid){
+      const shuffled = [...pool].sort(() => Math.random() - 0.5);
+      for(let i=0;i<firstCount;i++) tiles[i].type = shuffled[i];
+      
+      // Check for 3-in-a-row
+      valid = true;
+      for(let i=0;i<firstCount-2;i++){
+        if(tiles[i].type === tiles[i+1].type && tiles[i+1].type === tiles[i+2].type){
+          valid = false;
+          break;
+        }
+      }
+    }
 
-    // Last 21 (47..67): 10 snakes randomized, rest empty
-    const lastRangeIdx = Array.from({length:21},(_,i)=>firstCount + i);
+    // Last 22 (46..67): 12 snakes randomized, last 4 always empty, rest empty
+    const lastStart = firstCount;
+    const lastEnd = firstCount + 21; // indices 45-66 (22 tiles)
+    
+    // Last 4 tiles (64-67) are always empty, so only randomize snakes in positions 46-63
+    const snakeRangeIndices = Array.from({length:18},(_,i) => lastStart + i); // 18 slots for snakes
     const snakeSlots = new Set();
-    while(snakeSlots.size < 10) snakeSlots.add(lastRangeIdx[randInt(0,lastRangeIdx.length-1)]);
-    for(const idx of lastRangeIdx){ if(snakeSlots.has(idx)) tiles[idx].type = 'snake'; }
+    while(snakeSlots.size < 12) snakeSlots.add(snakeRangeIndices[randInt(0,snakeRangeIndices.length-1)]);
+    for(const idx of snakeRangeIndices){ 
+      if(snakeSlots.has(idx)) tiles[idx].type = 'snake';
+      else tiles[idx].type = 'empty';
+    }
+    // Last 4 tiles (64-67) are always empty - already initialized to empty
 
-    // remaining are empty
     return tiles;
   }
 
