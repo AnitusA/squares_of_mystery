@@ -79,6 +79,22 @@
 
   function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min }
 
+  function resetGame(){
+    state.board = generateBoard();
+    state.teams = [];
+    state.currentIndex = 0;
+    state.history = [];
+    state.winners = [];
+    diceEl.textContent = '-';
+    if (moveSteps) moveSteps.value = '';
+    try { localStorage.removeItem('som_latest_event_v1'); } catch (error) { /* ignore */ }
+    save();
+    renderBoard();
+    renderTeams();
+    renderWinners();
+    renderHall();
+  }
+
   function generateBoard(){
     // create empty board
     const tiles = Array.from({length:BOARD_SIZE}, (_,i)=>({pos:i+1,type:'empty'}));
@@ -278,7 +294,7 @@
     state.teams.push({name,members,color,points:0,pos:0}); teamNameInput.value=''; teamMembersInput.value=''; if(teamColorSelect) teamColorSelect.value = TEAM_COLORS[0].value; save(); renderTeams(); renderBoard();
   });
 
-  resetBoardBtn.addEventListener('click', ()=>{ if(confirm('Randomize board?')){ state.board = generateBoard(); save(); renderBoard(); } });
+  resetBoardBtn.addEventListener('click', ()=>{ if(confirm('Reset the full game? This clears teams, winners, history, and creates a new board.')){ resetGame(); } });
 
   assignBtn.addEventListener('click', ()=>{
     const idx = Number(assignTeam.value); const pts = Number(assignPoints.value)||0; if(isNaN(idx)) return;
