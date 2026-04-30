@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hall - Square of Mysteries</title>
+  <style>
+    body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0b1220;color:#fff;font-family:Segoe UI,Arial,sans-serif}
+    .card{background:#071029;padding:28px;border-radius:12px;min-width:320px;max-width:720px;text-align:center}
+    .num{font-size:72px;font-weight:700;margin:8px 0}
+    .text{font-size:20px;margin-top:6px}
+    .small{font-size:13px;color:#9fb3d0;margin-top:10px}
+    input,button{padding:8px;margin-top:10px;width:100%}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="content">
+      <div class="small">Paste event URL or encoded payload below, or open with a URL containing the payload in the hash.</div>
+      <input id="payloadInput" placeholder="Paste encoded payload or full URL" />
+      <button id="showBtn">Show</button>
+      <div id="display" style="display:none">
+        <div class="small">Tile</div>
+        <div class="num" id="tileNum">-</div>
+        <div class="text" id="tileText">-</div>
+        <div class="small" id="meta">-</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function decodeHash(h){ try{ if(!h) return null; const s = h.replace(/^#/, ''); const json = decodeURIComponent(escape(atob(s))); return JSON.parse(json);}catch(e){return null} }
+    function processPayload(p){ if(!p) return; document.getElementById('display').style.display='block'; document.getElementById('tileNum').textContent = p.pos || '-'; document.getElementById('tileText').textContent = p.text || p.type || '-'; document.getElementById('meta').textContent = (p.team? p.team + ' • ' : '') + (new Date(p.ts||Date.now()).toLocaleTimeString()); }
+    // on load, try hash
+    const h = window.location.hash;
+    const parsed = decodeHash(h);
+    if(parsed) processPayload(parsed);
+    document.getElementById('showBtn').addEventListener('click', ()=>{
+      const val = document.getElementById('payloadInput').value.trim();
+      if(!val) return;
+      // if full URL, extract hash
+      try{
+        let candidate = val;
+        if(val.indexOf('#') !== -1){ candidate = val.split('#').pop(); }
+        let obj = null;
+        try{ obj = decodeHash('#'+candidate); }catch(e){}
+        if(!obj){ // maybe it's raw JSON
+          obj = JSON.parse(candidate);
+        }
+        processPayload(obj);
+      }catch(e){ alert('Invalid payload') }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Square of Mysteries</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Square of Mysteries (67 tiles)</h1>
+  </header>
+
+  <main>
+    <section id="admin">
+      <h2>Admin Panel</h2>
+      <div class="admin-row">
+        <div>
+          <h3>Teams</h3>
+          <ul id="teamList"></ul>
+          <input id="teamName" placeholder="Team name" />
+          <input id="teamMembers" placeholder="Members (comma-separated)" />
+          <button id="addTeam">Add Team</button>
+        </div>
+        <div>
+          <h3>Dares (one per line)</h3>
+          <textarea id="dares" rows="6"></textarea>
+          <h3>Treasures (one per line)</h3>
+          <textarea id="treasures" rows="6"></textarea>
+          <button id="saveContent">Save Content</button>
+        </div>
+      </div>
+      <div class="admin-row">
+        <button id="resetBoard">Reset / Randomize Board</button>
+        <label>Saved state: <span id="savedState">—</span></label>
+      </div>
+      <div class="admin-row">
+        <h3>Manual point assign</h3>
+        <select id="assignTeam"></select>
+        <input id="assignPoints" type="number" placeholder="points" />
+        <button id="assignBtn">Give Points</button>
+      </div>
+    </section>
+
+    <section id="game">
+      <h2>Game</h2>
+      <div class="game-top">
+        <div>Current turn: <strong id="currentTeam">—</strong></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label class="small">Manual dice (enter result):</label>
+          <input id="moveSteps" placeholder="e.g. 4" style="width:80px" />
+          <button id="moveBtn">Move</button>
+        </div>
+        <div>Last move: <span id="dice">-</span></div>
+      </div>
+      <div id="board"></div>
+      <aside id="teamsPanel">
+        <h3>Teams</h3>
+        <ul id="teamsStatus"></ul>
+      </aside>
+    </section>
+    
+    <section id="hallSection">
+      <h2>Hall</h2>
+      <p class="small">Recent events (duplicates shown at most 3 times)</p>
+      <div id="hallList"></div>
+      <div class="admin-row">
+        <button id="clearHall">Clear Hall</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal" class="hidden">
+    <div id="modalContent">
+      <h3 id="modalTitle"></h3>
+      <div id="modalBody"></div>
+      <div class="modal-actions">
+        <button id="modalComplete" class="hidden">Completed</button>
+        <button id="modalOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hall link area (generated after a tile event) -->
+  <div id="hallSend" style="position:fixed;right:18px;bottom:18px;background:#fff;padding:10px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-width:360px">
+    <div class="small">Send event to Hall display (copy the URL or QR it)</div>
+    <input id="hallUrl" placeholder="No event yet" readonly style="width:100%;margin-top:8px;padding:6px" />
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button id="copyHall">Copy URL</button>
+      <button id="openHall">Open Hall</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
