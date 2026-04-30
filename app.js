@@ -360,10 +360,6 @@
     setTurnBtn.addEventListener('click', ()=> setManualTurn(turnTeamSelect.value));
   }
 
-  modalOk.addEventListener('click', ()=>{ modal.classList.add('hidden'); nextTurn(); });
-
-  modalComplete.addEventListener('click', ()=>{ modal.classList.add('hidden'); nextTurn(); });
-
   // Hall clear
   document.getElementById('clearHall').addEventListener('click', ()=>{ if(confirm('Clear hall history?')){ state.history = []; save(); renderHall(); } });
 
