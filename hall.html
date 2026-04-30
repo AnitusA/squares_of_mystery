@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hall - Square of Mysteries</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, #172554, #020617 70%);
+      color: #fff;
+      font-family: Segoe UI, Arial, sans-serif;
+    }
+    .screen {
+      width: min(92vw, 700px);
+      padding: 32px;
+      border-radius: 18px;
+      background: rgba(7, 16, 41, 0.92);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      text-align: center;
+    }
+    .label { color: #9fb3d0; text-transform: uppercase; letter-spacing: 0.18em; font-size: 12px; }
+    .num { font-size: clamp(72px, 18vw, 140px); line-height: 1; font-weight: 800; margin: 12px 0 8px; }
+    .text { font-size: clamp(22px, 4vw, 34px); font-weight: 600; }
+    .meta { margin-top: 16px; color: #b9c8e3; font-size: 14px; }
+    .waiting { color: #9fb3d0; font-size: 22px; }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <div class="label">Hall Display</div>
+    <div id="waiting" class="waiting">Waiting for the latest tile update...</div>
+    <div id="display" hidden>
+      <div class="num" id="tileNum">-</div>
+      <div class="text" id="tileText">-</div>
+      <div class="meta" id="tileMeta">-</div>
+    </div>
+  </div>
+
+  <script>
+    const waitingEl = document.getElementById('waiting');
+    const displayEl = document.getElementById('display');
+    const tileNumEl = document.getElementById('tileNum');
+    const tileTextEl = document.getElementById('tileText');
+    const tileMetaEl = document.getElementById('tileMeta');
+
+    function render(payload) {
+      if (!payload) return;
+      waitingEl.hidden = true;
+      displayEl.hidden = false;
+      tileNumEl.textContent = payload.pos ?? '-';
+      tileTextEl.textContent = payload.text ?? payload.type ?? '-';
+      tileMetaEl.textContent = `${payload.team ?? 'Team'} · ${new Date(payload.ts || Date.now()).toLocaleTimeString()}`;
+    }
+
+    function readLatest() {
+      try {
+        const raw = localStorage.getItem('som_latest_event_v1');
+        if (!raw) return;
+        render(JSON.parse(raw));
+      } catch (error) {
+        // ignore malformed storage
+      }
+    }
+
+    readLatest();
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'som_latest_event_v1' && event.newValue) {
+        try {
+          render(JSON.parse(event.newValue));
+        } catch (error) {
+          // ignore malformed storage
+        }
+      }
+    });
+
+    setInterval(readLatest, 1000);
+  </script>
+</body>
+</html>
