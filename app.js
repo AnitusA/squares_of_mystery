@@ -262,6 +262,13 @@
   load();
   if(!state.board) state.board = generateBoard();
   if(!Array.isArray(state.winners)) state.winners = [];
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        SOM_AUTH.logout();
+        window.location.href = 'login.html';
+      });
+    }
   // populate content inputs
   daresEl.value = state.content.dares.join('\n'); treasuresEl.value = state.content.treasures.join('\n');
   renderBoard(); renderTeams(); renderWinners();

@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Hall - Square of Mysteries</title>
+  <script src="auth.js"></script>
+  <script>
+    SOM_AUTH.requireRole('hall');
+  </script>
   <style>
     :root { color-scheme: dark; }
     body {
@@ -79,6 +83,7 @@
     });
 
     setInterval(readLatest, 1000);
+
   </script>
 </body>
 </html>

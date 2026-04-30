@@ -71,17 +71,14 @@
     <div class="card">
       <div class="tag">Hall Display</div>
       <h1>Hall Login</h1>
-      <p>Open the display screen for live tile updates and winners.</p>
-      <label for="hallPass">Password</label>
-      <input id="hallPass" type="password" placeholder="Enter hall password" />
+      <p>Open the display screen for live tile updates and winners. No password is required.</p>
       <button id="hallBtn">Enter Hall</button>
       <div class="error" id="hallError"></div>
     </div>
   </div>
 
   <script>
-    const ADMIN_PASSWORD = 'admin123';
-    const HALL_PASSWORD = 'hall123';
+    const ADMIN_PASSWORD = '02052004';
 
     const next = new URLSearchParams(window.location.search).get('next');
 
@@ -102,13 +99,7 @@
     });
 
     document.getElementById('hallBtn').addEventListener('click', () => {
-      const pass = document.getElementById('hallPass').value.trim();
-      const error = document.getElementById('hallError');
-      error.textContent = '';
-      if (pass !== HALL_PASSWORD) {
-        error.textContent = 'Invalid hall password';
-        return;
-      }
+      document.getElementById('hallError').textContent = '';
       go('hall', next === 'index.html' ? 'hall.html' : next || 'hall.html');
     });
   </script>
