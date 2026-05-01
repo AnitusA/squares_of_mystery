@@ -164,7 +164,8 @@
       tileNumEl.textContent = payload.pos ?? '-';
       const taskType = payload.type ?? '-';
       const symbol = getTaskSymbol(taskType);
-      tileTextEl.textContent = `${symbol} ${taskType}`;
+      const status = payload.status ? ` (${payload.status})` : '';
+      tileTextEl.textContent = `${symbol} ${taskType}${status}`;
       tileMetaEl.textContent = `${payload.team ?? 'Team'} · ${new Date(payload.ts || Date.now()).toLocaleTimeString()}`;
     }
 
