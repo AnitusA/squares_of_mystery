@@ -1,135 +1,47 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Square of Mysteries</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
-  <script>
-    // ===== FIREBASE CONFIG & AUTH =====
-    const firebaseConfig = {
-      apiKey: "AIzaSyDToHas8Id_5BiotcRirE222DR8ki93b88",
-      authDomain: "squares-of-mystery.firebaseapp.com",
-      projectId: "squares-of-mystery",
-      storageBucket: "squares-of-mystery.firebasestorage.app",
-      messagingSenderId: "91483191813",
-      appId: "1:91483191813:web:700f71b3fc9178f5823a6c",
-      measurementId: "G-5D2BNNHLQX"
-    };
-    
-    const DB_PATHS = {
-      gameState: 'gameState',
-      latestEvent: 'latestEvent'
-    };
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyDToHas8Id_5BiotcRirE222DR8ki93b88",
+  authDomain: "squares-of-mystery.firebaseapp.com",
+  projectId: "squares-of-mystery",
+  storageBucket: "squares-of-mystery.firebasestorage.app",
+  messagingSenderId: "91483191813",
+  appId: "1:91483191813:web:700f71b3fc9178f5823a6c",
+  measurementId: "G-5D2BNNHLQX"
+};
 
-    // ===== AUTH MODULE =====
-    (() => {
-      const AUTH_KEY = 'som_auth_role_v1';
-      function getRole() { return sessionStorage.getItem(AUTH_KEY) || ''; }
-      function setRole(role) { sessionStorage.setItem(AUTH_KEY, role); }
-      function logout() { sessionStorage.removeItem(AUTH_KEY); }
-      function requireRole(expectedRole, loginPath = 'login.html') {
-        if (getRole() !== expectedRole) {
-          window.location.replace(loginPath + '?next=' + encodeURIComponent(window.location.pathname.split('/').pop() || 'index.html'));
-          return false;
-        }
-        return true;
-      }
-      window.SOM_AUTH = { getRole, setRole, logout, requireRole };
-    })();
+const DB_PATHS = {
+  gameState: 'gameState',
+  latestEvent: 'latestEvent'
+};
 
-    SOM_AUTH.requireRole('admin');
-  </script>
-</head>
-<body>
-  <div style="position:fixed;top:12px;right:12px;z-index:10">
-    <button id="logoutBtn" style="padding:8px 12px">Logout</button>
-  </div>
-  <header>
-    <h1>Square of Mysteries (67 tiles)</h1>
-  </header>
+// ===== AUTH MODULE =====
+(() => {
+  const AUTH_KEY = 'som_auth_role_v1';
 
-  <main>
-    <section id="admin">
-      <h2>Admin Panel</h2>
-      <div class="admin-row">
-        <div>
-          <h3>Teams</h3>
-          <ul id="teamList"></ul>
-          <input id="teamName" placeholder="Team name" />
-          <input id="teamMembers" placeholder="Members (comma-separated)" />
-          <select id="teamColor"></select>
-          <button id="addTeam">Add Team</button>
-        </div>
-      </div>
-      <div class="admin-row">
-        <button id="resetBoard">Reset / Randomize Board</button>
-        <label>Saved state: <span id="savedState">—</span></label>
-      </div>
-      <div class="admin-row">
-        <h3>Manual point assign</h3>
-        <select id="assignTeam"></select>
-        <button id="randomAssignTeam">Random Team</button>
-        <input id="assignPoints" type="number" min="1" max="10" placeholder="1-10" />
-        <button id="assignBtn">Give Points</button>
-        <button id="takePointsBtn">Take Points</button>
-      </div>
-    </section>
+  function getRole() {
+    return sessionStorage.getItem(AUTH_KEY) || '';
+  }
 
-    <section id="game">
-      <h2>Game</h2>
-      <div class="game-top">
-        <div>Current turn: <strong id="currentTeam">—</strong></div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <label class="small">Set turn to:</label>
-          <select id="turnTeam" style="width:160px"></select>
-          <button id="setTurnBtn">Set Turn</button>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <label class="small">Manual dice (enter result):</label>
-          <input id="moveSteps" placeholder="e.g. 4" style="width:80px" />
-          <button id="moveBtn">Move</button>
-        </div>
-        <div>Last move: <span id="dice">-</span></div>
-      </div>
-      <div id="board"></div>
-      <aside id="teamsPanel">
-        <h3>Teams</h3>
-        <ul id="teamsStatus"></ul>
-      </aside>
+  function setRole(role) {
+    sessionStorage.setItem(AUTH_KEY, role);
+  }
 
-      <aside id="winnersPanel" style="margin-top:12px;padding:8px;background:#fff;border-radius:8px;">
-        <h3>Winners</h3>
-        <ol id="winnersList"></ol>
-      </aside>
-    </section>
-    
-    <section id="hallSection">
-      <h2>Hall</h2>
-      <p class="small">Recent events (duplicates shown at most 3 times)</p>
-      <div id="hallList"></div>
-      <div class="admin-row">
-        <button id="clearHall">Clear Hall</button>
-      </div>
-    </section>
-  </main>
+  function logout() {
+    sessionStorage.removeItem(AUTH_KEY);
+  }
 
-  <div id="modal" class="hidden">
-    <div id="modalContent">
-      <h3 id="modalTitle"></h3>
-      <div id="modalBody"></div>
-      <div class="modal-actions">
-        <button id="modalComplete" class="hidden">Completed</button>
-        <button id="modalNotComplete" class="hidden">Not Completed</button>
-        <button id="modalOk">OK</button>
-      </div>
-    </div>
-  </div>
+  function requireRole(expectedRole, loginPath = 'login.html') {
+    if (getRole() !== expectedRole) {
+      window.location.replace(loginPath + '?next=' + encodeURIComponent(window.location.pathname.split('/').pop() || 'index.html'));
+      return false;
+    }
+    return true;
+  }
 
-  <script>
-// ===== ADMIN APP (Combined with Firebase Config & Auth) =====
+  window.SOM_AUTH = { getRole, setRole, logout, requireRole };
+})();
+
+// ===== ADMIN APP =====
 (() => {
   const BOARD_SIZE = 67;
   const STORAGE_KEY = 'squares_state_v2';
@@ -624,4 +536,3 @@
 
   window._SOM = {state, save, generateBoard};
 })();
-  </script>

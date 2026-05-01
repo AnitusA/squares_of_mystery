@@ -4,7 +4,23 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Hall - Square of Mysteries</title>
-  <script src="firebase-config.js"></script>
+  <script>
+    // Firebase config - loaded before SDK scripts
+    const firebaseConfig = {
+      apiKey: "AIzaSyDToHas8Id_5BiotcRirE222DR8ki93b88",
+      authDomain: "squares-of-mystery.firebaseapp.com",
+      projectId: "squares-of-mystery",
+      storageBucket: "squares-of-mystery.firebasestorage.app",
+      messagingSenderId: "91483191813",
+      appId: "1:91483191813:web:700f71b3fc9178f5823a6c",
+      measurementId: "G-5D2BNNHLQX"
+    };
+    
+    const DB_PATHS = {
+      gameState: 'gameState',
+      latestEvent: 'latestEvent'
+    };
+  </script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
   <style>
@@ -171,160 +187,174 @@
   </div>
 
   <script>
-    const waitingEl = document.getElementById('waiting');
-    const displayEl = document.getElementById('display');
-    const taskVisualEl = document.getElementById('taskVisual');
-    const taskIconEl = document.getElementById('taskIcon');
-    const tileNumEl = document.getElementById('tileNum');
-    const tileTextEl = document.getElementById('tileText');
-    const tileMetaEl = document.getElementById('tileMeta');
-    const boardEl = document.getElementById('board');
-    const BOARD_SIZE = 67;
+    // ===== HALL APP (Combined with Firebase Config) =====
+    (() => {
+      const waitingEl = document.getElementById('waiting');
+      const displayEl = document.getElementById('display');
+      const taskVisualEl = document.getElementById('taskVisual');
+      const taskIconEl = document.getElementById('taskIcon');
+      const tileNumEl = document.getElementById('tileNum');
+      const tileTextEl = document.getElementById('tileText');
+      const tileMetaEl = document.getElementById('tileMeta');
+      const boardEl = document.getElementById('board');
+      const BOARD_SIZE = 67;
 
-    // Initialize Firebase
-    let db = null;
-    try {
-      const fbApp = firebase.initializeApp(firebaseConfig);
-      db = firebase.database(fbApp);
-    } catch (error) {
-      console.log('Firebase not available');
-    }
-
-    function getTaskAsset(taskType) {
-      const symbolMap = {
-        dare: 'symbols/devil.png',
-        treasure: 'symbols/treasure.png',
-        hex: 'symbols/sword.png',
-        snake: 'symbols/mine.png',
-        quiz: 'symbols/quiz.png'
-      };
-      return symbolMap[taskType?.toLowerCase()] || '';
-    }
-
-    function render(payload) {
-      if (!payload) return;
-      waitingEl.hidden = true;
-      displayEl.hidden = false;
-      const taskType = payload.type ?? '-';
-      const taskAsset = getTaskAsset(taskType);
-      taskVisualEl.classList.add('flicker');
-      if (taskAsset) {
-        taskIconEl.src = taskAsset;
-        taskIconEl.alt = `${taskType} symbol`;
-        taskIconEl.hidden = false;
-      } else {
-        taskIconEl.hidden = true;
-      }
-      tileNumEl.textContent = payload.pos ?? '-';
-      const status = payload.status ? ` (${payload.status})` : '';
-      tileTextEl.textContent = `${taskType}${status}`;
-      tileMetaEl.textContent = `${payload.team ?? 'Team'} · ${new Date(payload.ts || Date.now()).toLocaleTimeString()}`;
-    }
-
-    function getLatestEvent(sharedState) {
-      if (sharedState && sharedState.latestEvent) return sharedState.latestEvent;
-      if (sharedState && Array.isArray(sharedState.history) && sharedState.history.length) {
-        const last = sharedState.history[sharedState.history.length - 1];
-        return {
-          type: last.type,
-          text: last.text,
-          team: last.team,
-          pos: last.pos,
-          status: 'completed',
-          ts: last.ts
-        };
-      }
-      return null;
-    }
-
-    function renderBoard(state) {
-      const teams = Array.isArray(state.teams) ? state.teams : [];
-      boardEl.innerHTML = '';
-      for (let pos = 1; pos <= BOARD_SIZE; pos++) {
-        const tile = document.createElement('div');
-        tile.className = 'tile';
-        const coins = teams
-          .filter(team => (team.pos || 0) === pos)
-          .map(team => `<span class="coin" title="${team.name}" style="background:${team.color || '#64748b'}">${team.name.slice(0,1).toUpperCase()}</span>`)
-          .join('');
-        tile.innerHTML = `<div class="num">${pos}</div>${coins ? `<div class="coins">${coins}</div>` : ''}`;
-        boardEl.appendChild(tile);
-      }
-    }
-
-    function renderLeaderboard(state) {
-      const leaderboardEl = document.getElementById('leaderboard');
-      const teams = Array.isArray(state.teams) ? state.teams : [];
-      
-      leaderboardEl.innerHTML = '';
-      if (!teams.length) {
-        leaderboardEl.innerHTML = '<div style="color:#9fb3d0;font-size:14px">No teams yet</div>';
-        return;
-      }
-      
-      // Sort by points descending
-      const sorted = [...teams].sort((a, b) => (b.points || 0) - (a.points || 0));
-      
-      sorted.forEach((team, index) => {
-        const item = document.createElement('div');
-        item.className = 'leaderboard-item';
-        const medalEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
-        item.innerHTML = `
-          <div class="leaderboard-coin" style="background:${team.color || '#64748b'}">${team.name.slice(0,1).toUpperCase()}</div>
-          <div class="leaderboard-info">
-            <div class="leaderboard-name">${medalEmoji} ${team.name}</div>
-            <div class="leaderboard-pos">Pos: ${team.pos || 0}</div>
-          </div>
-          <div class="leaderboard-points">${team.points || 0}</div>
-        `;
-        leaderboardEl.appendChild(item);
-      });
-    }
-
-    function renderSharedState(state) {
-      render(getLatestEvent(state));
-      renderBoard(state);
-      renderLeaderboard(state);
-    }
-
-    function setupFirebaseListeners() {
-      if (!db) {
-        // Fallback to polling if Firebase is not available
-        setInterval(readLatest, 2000);
-        return;
-      }
-
-      // Listen to game state changes in real-time
-      db.ref(DB_PATHS.gameState).on('value', (snapshot) => {
-        if (snapshot.exists()) {
-          const state = snapshot.val();
-          renderSharedState(state || {});
-        }
-      });
-
-      // Listen to latest event changes
-      db.ref(DB_PATHS.latestEvent).on('value', (snapshot) => {
-        if (snapshot.exists()) {
-          render(snapshot.val());
-        }
-      });
-    }
-
-    async function readLatest() {
+      let db = null;
       try {
-        if (!db) return;
-        const snapshot = await db.ref(DB_PATHS.gameState).once('value');
-        if (snapshot.exists()) {
-          renderSharedState(snapshot.val() || {});
-        }
+        const fbApp = firebase.initializeApp(firebaseConfig);
+        db = firebase.database(fbApp);
       } catch (error) {
-        // ignore fetch errors
+        console.log('Firebase not available');
       }
-    }
 
-    setupFirebaseListeners();
-    readLatest();
+      function getTaskAsset(taskType) {
+        const symbolMap = {
+          dare: 'symbols/devil.png',
+          treasure: 'symbols/treasure.png',
+          hex: 'symbols/sword.png',
+          snake: 'symbols/mine.png',
+          quiz: 'symbols/quiz.png'
+        };
+        return symbolMap[taskType?.toLowerCase()] || '';
+      }
 
+      function render(payload) {
+        if (!payload) return;
+        waitingEl.hidden = true;
+        displayEl.hidden = false;
+        const taskType = payload.type ?? '-';
+        const taskAsset = getTaskAsset(taskType);
+        taskVisualEl.classList.add('flicker');
+        if (taskAsset) {
+          taskIconEl.src = taskAsset;
+          taskIconEl.alt = `${taskType} symbol`;
+          taskIconEl.hidden = false;
+        } else {
+          taskIconEl.hidden = true;
+        }
+        tileNumEl.textContent = payload.pos ?? '-';
+        const status = payload.status ? ` (${payload.status})` : '';
+        tileTextEl.textContent = `${taskType}${status}`;
+        tileMetaEl.textContent = `${payload.team ?? 'Team'} · ${new Date(payload.ts || Date.now()).toLocaleTimeString()}`;
+      }
+
+      function getLatestEvent(sharedState) {
+        if (sharedState && sharedState.latestEvent) return sharedState.latestEvent;
+        if (sharedState && Array.isArray(sharedState.history) && sharedState.history.length) {
+          const last = sharedState.history[sharedState.history.length - 1];
+          return {
+            type: last.type,
+            text: last.text,
+            team: last.team,
+            pos: last.pos,
+            status: 'completed',
+            ts: last.ts
+          };
+        }
+        return null;
+      }
+
+      function renderBoard(state) {
+        const teams = Array.isArray(state?.teams) ? state.teams : [];
+        boardEl.innerHTML = '';
+        for (let pos = 1; pos <= BOARD_SIZE; pos++) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          const coins = teams
+            .filter(team => (team.pos || 0) === pos)
+            .map(team => `<span class="coin" title="${team.name}" style="background:${team.color || '#64748b'}">${team.name.slice(0,1).toUpperCase()}</span>`)
+            .join('');
+          tile.innerHTML = `<div class="num">${pos}</div>${coins ? `<div class="coins">${coins}</div>` : ''}`;
+          boardEl.appendChild(tile);
+        }
+      }
+
+      function renderLeaderboard(state) {
+        const leaderboardEl = document.getElementById('leaderboard');
+        const teams = Array.isArray(state?.teams) ? state.teams : [];
+        
+        leaderboardEl.innerHTML = '';
+        if (!teams.length) {
+          leaderboardEl.innerHTML = '<div style="color:#9fb3d0;font-size:14px">No teams yet</div>';
+          return;
+        }
+        
+        const sorted = [...teams].sort((a, b) => (b.points || 0) - (a.points || 0));
+        
+        sorted.forEach((team, index) => {
+          const item = document.createElement('div');
+          item.className = 'leaderboard-item';
+          const medalEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+          const pointsValue = team.points || 0;
+          item.innerHTML = `
+            <div class="leaderboard-coin" style="background:${team.color || '#64748b'}">${team.name.slice(0,1).toUpperCase()}</div>
+            <div class="leaderboard-info">
+              <div class="leaderboard-name">${medalEmoji} ${team.name}</div>
+              <div class="leaderboard-pos">Pos: ${team.pos || 0}</div>
+            </div>
+            <div class="leaderboard-points">${pointsValue}</div>
+          `;
+          leaderboardEl.appendChild(item);
+        });
+      }
+
+      function renderSharedState(state) {
+        if (!state) state = {teams: [], board: []};
+        render(getLatestEvent(state));
+        renderBoard(state);
+        renderLeaderboard(state);
+      }
+
+      function setupFirebaseListeners() {
+        if (!db) {
+          console.log('Firebase not initialized, falling back to polling');
+          setInterval(readLatest, 2000);
+          return;
+        }
+
+        db.ref(DB_PATHS.gameState).on('value', (snapshot) => {
+          if (snapshot.exists()) {
+            const state = snapshot.val();
+            renderSharedState(state || {});
+          } else {
+            console.log('No gameState data in Firebase yet');
+            renderSharedState({teams: [], board: []});
+          }
+        }, (error) => {
+          console.log('Firebase error reading gameState:', error.message);
+          renderSharedState({teams: [], board: []});
+        });
+
+        db.ref(DB_PATHS.latestEvent).on('value', (snapshot) => {
+          if (snapshot.exists()) {
+            render(snapshot.val());
+          }
+        });
+      }
+
+      async function readLatest() {
+        try {
+          if (!db) {
+            console.log('Firebase DB not available');
+            renderSharedState({teams: [], board: []});
+            return;
+          }
+          const snapshot = await db.ref(DB_PATHS.gameState).once('value');
+          if (snapshot.exists()) {
+            renderSharedState(snapshot.val() || {teams: [], board: []});
+          } else {
+            console.log('No initial data found in Firebase');
+            renderSharedState({teams: [], board: []});
+          }
+        } catch (error) {
+          console.log('Error reading latest state:', error.message);
+          renderSharedState({teams: [], board: []});
+        }
+      }
+
+      setupFirebaseListeners();
+      readLatest();
+    })();
   </script>
 </body>
 </html>
