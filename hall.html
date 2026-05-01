@@ -47,14 +47,17 @@
       transform: translateZ(0);
     }
     .task-visual.flicker .task-icon {
-      animation: iconFlicker 0.9s steps(2, end) infinite;
+      animation: heartbeatFlicker 1.05s ease-in-out infinite;
     }
-    @keyframes iconFlicker {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      20% { opacity: 0.18; transform: scale(0.98); }
-      35% { opacity: 0.95; transform: scale(1.02); }
-      50% { opacity: 0.25; transform: scale(0.99); }
-      70% { opacity: 1; transform: scale(1.01); }
+    @keyframes heartbeatFlicker {
+      0% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 10px rgba(255,255,255,0.12)); }
+      12% { opacity: 0.35; transform: scale(0.96); }
+      20% { opacity: 1; transform: scale(1.06); filter: drop-shadow(0 0 22px rgba(255,255,255,0.24)); }
+      28% { opacity: 0.45; transform: scale(0.98); }
+      38% { opacity: 1; transform: scale(1.03); }
+      55% { opacity: 0.5; transform: scale(0.99); }
+      70% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 24px rgba(255,255,255,0.28)); }
+      100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 10px rgba(255,255,255,0.12)); }
     }
     .label { color: #9fb3d0; text-transform: uppercase; letter-spacing: 0.18em; font-size: 12px; }
     .num { font-size: clamp(72px, 18vw, 140px); line-height: 1; font-weight: 800; margin: 12px 0 8px; }
@@ -180,7 +183,6 @@
     const boardEl = document.getElementById('board');
     const BOARD_SIZE = 67;
     const stateKey = 'squares_state_v2';
-    let flickerTimer = null;
 
     function getTaskAsset(taskType) {
       const symbolMap = {
@@ -200,8 +202,6 @@
       const taskType = payload.type ?? '-';
       const taskAsset = getTaskAsset(taskType);
       taskVisualEl.classList.add('flicker');
-      clearTimeout(flickerTimer);
-      flickerTimer = setTimeout(() => taskVisualEl.classList.remove('flicker'), payload.status === 'pending' ? 1400 : 900);
       if (taskAsset) {
         taskIconEl.src = taskAsset;
         taskIconEl.alt = `${taskType} symbol`;
