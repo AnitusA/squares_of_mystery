@@ -4,10 +4,10 @@ Simple static web game (Snake-like events and tiles) implemented as HTML/CSS/JS.
 
 How to run
 
-- Run the Node server:
+- Run the Python server:
 
 ```bash
-npm start
+python server.py
 # then open http://localhost:3000/
 ```
 
@@ -24,7 +24,7 @@ Features
 - Last 22 tiles contain 9 randomized snakes, 9 empty, with last 4 tiles always empty (no 3-in-a-row)
 - Dice roll to move current team; modal displays events
 - Use real dice and enter the rolled number in the admin UI (`moveSteps`) then press `Move`.
-- The Hall page is display-only and follows the latest tile update from the shared Node backend.
+- The Hall page is display-only and follows the latest tile update from the shared Python backend.
 - Dare, Quiz, Hex, Treasure, and Snake only show an event label plus a `Completed` button.
 
 Notes / next steps
