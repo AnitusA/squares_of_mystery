@@ -147,14 +147,24 @@
     const BOARD_SIZE = 67;
     const stateKey = 'squares_state_v2';
 
+    function getTaskSymbol(taskType) {
+      const symbolMap = {
+        'dare': '😈',
+        'treasure': '😊',
+        'hex': '⚔️',
+        'snake': '💣'
+      };
+      return symbolMap[taskType?.toLowerCase()] || '❓';
+    }
+
     function render(payload) {
       if (!payload) return;
       waitingEl.hidden = true;
       displayEl.hidden = false;
       tileNumEl.textContent = payload.pos ?? '-';
-      tileTextEl.textContent = payload.status === 'completed'
-        ? (payload.type ?? '-')
-        : 'Task hidden until completed';
+      const taskType = payload.type ?? '-';
+      const symbol = getTaskSymbol(taskType);
+      tileTextEl.textContent = `${symbol} ${taskType}`;
       tileMetaEl.textContent = `${payload.team ?? 'Team'} · ${new Date(payload.ts || Date.now()).toLocaleTimeString()}`;
     }
 
