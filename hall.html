@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Hall - Square of Mysteries</title>
+  <script src="auth.js"></script>
+  <script>
+    SOM_AUTH.requireRole('hall');
+  </script>
   <style>
     :root { color-scheme: dark; }
     body {
@@ -168,135 +172,131 @@
   </div>
 
   <script>
-    // ===== HALL APP (Backend Polling) =====
-    (() => {
-      const STATE_API = '/api/state';
-      const waitingEl = document.getElementById('waiting');
-      const displayEl = document.getElementById('display');
-      const taskVisualEl = document.getElementById('taskVisual');
-      const taskIconEl = document.getElementById('taskIcon');
-      const tileNumEl = document.getElementById('tileNum');
-      const tileTextEl = document.getElementById('tileText');
-      const tileMetaEl = document.getElementById('tileMeta');
-      const boardEl = document.getElementById('board');
-      const BOARD_SIZE = 67;
+    const waitingEl = document.getElementById('waiting');
+    const displayEl = document.getElementById('display');
+    const taskVisualEl = document.getElementById('taskVisual');
+    const taskIconEl = document.getElementById('taskIcon');
+    const tileNumEl = document.getElementById('tileNum');
+    const tileTextEl = document.getElementById('tileText');
+    const tileMetaEl = document.getElementById('tileMeta');
+    const boardEl = document.getElementById('board');
+    const BOARD_SIZE = 67;
+    const stateKey = 'squares_state_v2';
 
-      function getTaskAsset(taskType) {
-        const symbolMap = {
-          dare: 'symbols/devil.png',
-          treasure: 'symbols/treasure.png',
-          hex: 'symbols/sword.png',
-          snake: 'symbols/mine.png',
-          quiz: 'symbols/quiz.png'
-        };
-        return symbolMap[taskType?.toLowerCase()] || '';
+    function getTaskAsset(taskType) {
+      const symbolMap = {
+        dare: 'symbols/devil.png',
+        treasure: 'symbols/treasure.png',
+        hex: 'symbols/sword.png',
+        snake: 'symbols/mine.png',
+        quiz: 'symbols/quiz.png'
+      };
+      return symbolMap[taskType?.toLowerCase()] || '';
+    }
+
+    function render(payload) {
+      if (!payload) return;
+      waitingEl.hidden = true;
+      displayEl.hidden = false;
+      const taskType = payload.type ?? '-';
+      const taskAsset = getTaskAsset(taskType);
+      taskVisualEl.classList.add('flicker');
+      if (taskAsset) {
+        taskIconEl.src = taskAsset;
+        taskIconEl.alt = `${taskType} symbol`;
+        taskIconEl.hidden = false;
+      } else {
+        taskIconEl.hidden = true;
       }
+      tileNumEl.textContent = payload.pos ?? '-';
+      const status = payload.status ? ` (${payload.status})` : '';
+      tileTextEl.textContent = `${taskType}${status}`;
+      tileMetaEl.textContent = `${payload.team ?? 'Team'} · ${new Date(payload.ts || Date.now()).toLocaleTimeString()}`;
+    }
 
-      function render(payload) {
-        if (!payload) return;
-        waitingEl.hidden = true;
-        displayEl.hidden = false;
-        const taskType = payload.type ?? '-';
-        const taskAsset = getTaskAsset(taskType);
-        taskVisualEl.classList.add('flicker');
-        if (taskAsset) {
-          taskIconEl.src = taskAsset;
-          taskIconEl.alt = `${taskType} symbol`;
-          taskIconEl.hidden = false;
-        } else {
-          taskIconEl.hidden = true;
-        }
-        tileNumEl.textContent = payload.pos ?? '-';
-        const status = payload.status ? ` (${payload.status})` : '';
-        tileTextEl.textContent = `${taskType}${status}`;
-        tileMetaEl.textContent = `${payload.team ?? 'Team'} · ${new Date(payload.ts || Date.now()).toLocaleTimeString()}`;
+    function readGameState() {
+      try {
+        return JSON.parse(localStorage.getItem(stateKey) || '{}');
+      } catch (error) {
+        return {};
       }
+    }
 
-      function getLatestEvent(sharedState) {
-        if (sharedState && sharedState.latestEvent) return sharedState.latestEvent;
-        if (sharedState && Array.isArray(sharedState.history) && sharedState.history.length) {
-          const last = sharedState.history[sharedState.history.length - 1];
-          return {
-            type: last.type,
-            text: last.text,
-            team: last.team,
-            pos: last.pos,
-            status: 'completed',
-            ts: last.ts
-          };
-        }
-        return null;
+    function renderBoard() {
+      const state = readGameState();
+      const teams = Array.isArray(state.teams) ? state.teams : [];
+      boardEl.innerHTML = '';
+      for (let pos = 1; pos <= BOARD_SIZE; pos++) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        const coins = teams
+          .filter(team => (team.pos || 0) === pos)
+          .map(team => `<span class="coin" title="${team.name}" style="background:${team.color || '#64748b'}">${team.name.slice(0,1).toUpperCase()}</span>`)
+          .join('');
+        tile.innerHTML = `<div class="num">${pos}</div>${coins ? `<div class="coins">${coins}</div>` : ''}`;
+        boardEl.appendChild(tile);
       }
+    }
 
-      function renderBoard(state) {
-        const teams = Array.isArray(state?.teams) ? state.teams : [];
-        boardEl.innerHTML = '';
-        for (let pos = 1; pos <= BOARD_SIZE; pos++) {
-          const tile = document.createElement('div');
-          tile.className = 'tile';
-          const coins = teams
-            .filter(team => (team.pos || 0) === pos)
-            .map(team => `<span class="coin" title="${team.name}" style="background:${team.color || '#64748b'}">${team.name.slice(0,1).toUpperCase()}</span>`)
-            .join('');
-          tile.innerHTML = `<div class="num">${pos}</div>${coins ? `<div class="coins">${coins}</div>` : ''}`;
-          boardEl.appendChild(tile);
-        }
+    function renderLeaderboard() {
+      const state = readGameState();
+      const leaderboardEl = document.getElementById('leaderboard');
+      const teams = Array.isArray(state.teams) ? state.teams : [];
+      
+      leaderboardEl.innerHTML = '';
+      if (!teams.length) {
+        leaderboardEl.innerHTML = '<div style="color:#9fb3d0;font-size:14px">No teams yet</div>';
+        return;
       }
+      
+      // Sort by points descending
+      const sorted = [...teams].sort((a, b) => (b.points || 0) - (a.points || 0));
+      
+      sorted.forEach((team, index) => {
+        const item = document.createElement('div');
+        item.className = 'leaderboard-item';
+        const medalEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+        item.innerHTML = `
+          <div class="leaderboard-coin" style="background:${team.color || '#64748b'}">${team.name.slice(0,1).toUpperCase()}</div>
+          <div class="leaderboard-info">
+            <div class="leaderboard-name">${medalEmoji} ${team.name}</div>
+            <div class="leaderboard-pos">Pos: ${team.pos || 0}</div>
+          </div>
+          <div class="leaderboard-points">${team.points || 0}</div>
+        `;
+        leaderboardEl.appendChild(item);
+      });
+    }
 
-      function renderLeaderboard(state) {
-        const leaderboardEl = document.getElementById('leaderboard');
-        const teams = Array.isArray(state?.teams) ? state.teams : [];
-        
-        leaderboardEl.innerHTML = '';
-        if (!teams.length) {
-          leaderboardEl.innerHTML = '<div style="color:#9fb3d0;font-size:14px">No teams yet</div>';
-          return;
-        }
-        
-        const sorted = [...teams].sort((a, b) => (b.points || 0) - (a.points || 0));
-        
-        sorted.forEach((team, index) => {
-          const item = document.createElement('div');
-          item.className = 'leaderboard-item';
-          const medalEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
-          const pointsValue = team.points || 0;
-          item.innerHTML = `
-            <div class="leaderboard-coin" style="background:${team.color || '#64748b'}">${team.name.slice(0,1).toUpperCase()}</div>
-            <div class="leaderboard-info">
-              <div class="leaderboard-name">${medalEmoji} ${team.name}</div>
-              <div class="leaderboard-pos">Pos: ${team.pos || 0}</div>
-            </div>
-            <div class="leaderboard-points">${pointsValue}</div>
-          `;
-          leaderboardEl.appendChild(item);
-        });
+    function readLatest() {
+      try {
+        const raw = localStorage.getItem('som_latest_event_v1');
+        if (!raw) return;
+        render(JSON.parse(raw));
+      } catch (error) {
+        // ignore malformed storage
       }
+    }
 
-      function renderSharedState(state) {
-        if (!state) state = {teams: [], board: []};
-        render(getLatestEvent(state));
-        renderBoard(state);
-        renderLeaderboard(state);
-      }
-
-      async function readLatest() {
+    readLatest();
+    renderBoard();
+    renderLeaderboard();
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'som_latest_event_v1' && event.newValue) {
         try {
-          const response = await fetch(STATE_API, { cache: 'no-store' });
-          if (response.ok) {
-            const state = await response.json();
-            renderSharedState(state || {teams: [], board: []});
-          } else {
-            renderSharedState({teams: [], board: []});
-          }
+          render(JSON.parse(event.newValue));
         } catch (error) {
-          renderSharedState({teams: [], board: []});
+          // ignore malformed storage
         }
       }
+      if (event.key === stateKey) {
+        renderBoard();
+        renderLeaderboard();
+      }
+    });
 
-      renderSharedState({teams: [], board: []});
-      readLatest();
-      setInterval(readLatest, 1500);
-    })();
+    setInterval(() => window.location.reload(), 2000);
+
   </script>
 </body>
 </html>
