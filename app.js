@@ -22,11 +22,9 @@
   const modalOk = document.getElementById('modalOk');
   const modalComplete = document.getElementById('modalComplete');
   const modalNotComplete = document.getElementById('modalNotComplete');
-  const assignTeam = document.getElementById('assignTeam');
-  const assignPoints = document.getElementById('assignPoints');
-  const assignBtn = document.getElementById('assignBtn');
-  const takePointsBtn = document.getElementById('takePointsBtn');
-  const randomAssignTeamBtn = document.getElementById('randomAssignTeam');
+  const moveForwardBtn = document.getElementById('moveForwardBtn');
+  const moveBackwardBtn = document.getElementById('moveBackwardBtn');
+  const moveStepsAdmin = document.getElementById('moveStepsAdmin');
   const savedStateEl = document.getElementById('savedState');
 
   // game state
@@ -374,21 +372,31 @@
 
   assignBtn.addEventListener('click', ()=>{
     const idx = getSelectedTeamIndex(assignTeam);
-    const pts = Number(assignPoints.value) || 0;
+    const steps = Number(moveStepsAdmin.value) || 0;
     if (idx < 0) return alert('Select a valid team');
-    if (!pts || pts < 1 || pts > 10) return alert('Enter points from 1 to 10');
-    changeTeamPoints(idx, pts);
-    assignPoints.value = '';
+    if (!steps || steps < 1 || steps > 20) return alert('Enter steps from 1 to 20');
+    const team = state.teams[idx];
+    team.pos = Math.min(BOARD_SIZE, (team.pos || 0) + steps);
+    save();
+    renderTeams();
+    renderBoard();
+    renderHall();
+    moveStepsAdmin.value = '';
   });
 
   if (takePointsBtn) {
     takePointsBtn.addEventListener('click', ()=>{
       const idx = getSelectedTeamIndex(assignTeam);
-      const pts = Number(assignPoints.value) || 0;
+      const steps = Number(moveStepsAdmin.value) || 0;
       if (idx < 0) return alert('Select a valid team');
-      if (!pts || pts < 1 || pts > 10) return alert('Enter points from 1 to 10');
-      changeTeamPoints(idx, -pts);
-      assignPoints.value = '';
+      if (!steps || steps < 1 || steps > 20) return alert('Enter steps from 1 to 20');
+      const team = state.teams[idx];
+      team.pos = Math.max(1, (team.pos || 0) - steps);
+      save();
+      renderTeams();
+      renderBoard();
+      renderHall();
+      moveStepsAdmin.value = '';
     });
   }
 
