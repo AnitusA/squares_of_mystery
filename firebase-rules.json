@@ -1,0 +1,13 @@
+{
+  "rules": {
+    "gameState": {
+      ".read": true,
+      ".write": true,
+      ".validate": "newData.hasChildren(['version', 'board', 'teams', 'currentIndex', 'history', 'winners', 'latestEvent'])"
+    },
+    "latestEvent": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

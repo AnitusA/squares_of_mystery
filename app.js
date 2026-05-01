@@ -1,7 +1,15 @@
 (() => {
   const BOARD_SIZE = 67;
   const STORAGE_KEY = 'squares_state_v2';
-  const API_STATE_URL = '/api/state';
+
+  // Initialize Firebase
+  let db = null;
+  try {
+    const fbApp = firebase.initializeApp(firebaseConfig);
+    db = firebase.database(fbApp);
+  } catch (error) {
+    console.log('Firebase not available, using localStorage only');
+  }
 
   // elements
   const teamListEl = document.getElementById('teamList');
@@ -97,25 +105,30 @@
     return normalized;
   }
 
-  async function syncStateToServer() {
+  async function syncStateToFirebase() {
+    if (!db) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return;
+    }
     try {
-      await fetch(API_STATE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(state)
-      });
+      await db.ref(DB_PATHS.gameState).set(state);
     } catch (error) {
-      // ignore offline/server errors
+      console.log('Firebase write failed, data saved locally');
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
   }
 
-  async function loadStateFromServer() {
+  async function loadStateFromFirebase() {
+    if (!db) return false;
     try {
-      const response = await fetch(API_STATE_URL, { cache: 'no-store' });
-      if (!response.ok) return false;
-      state = normalizeState(await response.json());
-      return true;
+      const snapshot = await db.ref(DB_PATHS.gameState).once('value');
+      if (snapshot.exists()) {
+        state = normalizeState(snapshot.val());
+        return true;
+      }
+      return false;
     } catch (error) {
+      console.log('Firebase read failed');
       return false;
     }
   }
@@ -124,7 +137,7 @@
     state = normalizeState(state);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     updateSavedLabel();
-    void syncStateToServer();
+    void syncStateToFirebase();
   }
 
   function load() {
@@ -369,6 +382,13 @@
       winners: state.winners
     };
     save();
+    if (db) {
+      try {
+        void db.ref(DB_PATHS.latestEvent).set(state.latestEvent);
+      } catch (error) {
+        // Firebase write failed, state already saved locally
+      }
+    }
   }
 
   function renderHall(){
@@ -457,7 +477,7 @@
 
   async function bootstrap() {
     load();
-    await loadStateFromServer();
+    await loadStateFromFirebase();
     state = normalizeState(state);
     if(!state.board) state.board = generateBoard();
     if(!Array.isArray(state.winners)) state.winners = [];
@@ -483,7 +503,7 @@
     }
     renderBoard(); renderTeams(); renderWinners();
     renderHall();
-    void syncStateToServer();
+    void syncStateToFirebase();
   }
 
   bootstrap();
