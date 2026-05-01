@@ -190,13 +190,12 @@
     state.board.forEach(tile => {
       const d = document.createElement('div');
       d.className = 'tile type-'+(tile.type||'empty');
-      const tileLabel = tile.type === 'snake' ? 'snake' : (tile.type || 'empty');
-      const tilePenalty = tile.type === 'snake' ? '<div class="tile-penalty">-5 to -10 pts</div>' : '';
+      const tileLabel = tile.type === 'snake' ? 'mine' : (tile.type || 'empty');
       const onTileTeams = state.teams
         .filter(team => (team.pos || 0) === tile.pos)
         .map(team => `<span class="team-coin" title="${team.name}" style="background:${team.color || '#64748b'}">${team.name.slice(0, 1).toUpperCase()}</span>`)
         .join('');
-      d.innerHTML = `<div class="num">${tile.pos}</div><div>${tileLabel}</div>${tilePenalty}${onTileTeams ? `<div class="team-coins">${onTileTeams}</div>` : ''}`;
+      d.innerHTML = `<div class="num">${tile.pos}</div><div>${tileLabel}</div>${onTileTeams ? `<div class="team-coins">${onTileTeams}</div>` : ''}`;
       boardEl.appendChild(d);
     });
   }

@@ -78,6 +78,13 @@
       <button id="hallBtn">Enter Hall</button>
       <div class="error" id="hallError"></div>
     </div>
+
+    <div class="card" style="grid-column: 1 / -1; text-align: center;">
+      <div class="tag">Game Guide</div>
+      <h1>Rules & Regulations</h1>
+      <p>Read the game rules before entering the board or opening the hall display.</p>
+      <button id="rulesBtn" type="button">View Rules</button>
+    </div>
   </div>
 
   <script>
@@ -104,6 +111,10 @@
     document.getElementById('hallBtn').addEventListener('click', () => {
       document.getElementById('hallError').textContent = '';
       go('hall', next === 'index.html' ? 'hall.html' : next || 'hall.html');
+    });
+
+    document.getElementById('rulesBtn').addEventListener('click', () => {
+      window.location.href = 'rules.html';
     });
   </script>
 </body>
