@@ -295,7 +295,8 @@
       entryText = 'snake';
       state.history.push({type:'snake', text:'snake', team:team.name, pos:tile.pos, ts:Date.now()});
       team.points = Math.max(0,(team.points||0) - loss);
-      showModal('Snake', `<p>Snake penalty: -${loss} points</p><p class="small">Press Completed to continue.</p>`, true, ()=>{ updateLatestEvent('snake', team, tile, 'completed'); });
+      team.pos = Math.max(1, (team.pos || 0) - loss);
+      showModal('Snake', `<p>Snake penalty: -${loss} points</p><p class="small">Move back ${loss} spaces, then press Completed to continue.</p>`, true, ()=>{ updateLatestEvent('snake', team, tile, 'completed'); });
     } else {
       // nothing
       entryText = 'Empty';
