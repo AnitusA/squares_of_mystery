@@ -4,25 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Hall - Square of Mysteries</title>
-  <script>
-    // Firebase config - loaded before SDK scripts
-    const firebaseConfig = {
-      apiKey: "AIzaSyDToHas8Id_5BiotcRirE222DR8ki93b88",
-      authDomain: "squares-of-mystery.firebaseapp.com",
-      projectId: "squares-of-mystery",
-      storageBucket: "squares-of-mystery.firebasestorage.app",
-      messagingSenderId: "91483191813",
-      appId: "1:91483191813:web:700f71b3fc9178f5823a6c",
-      measurementId: "G-5D2BNNHLQX"
-    };
-    
-    const DB_PATHS = {
-      gameState: 'gameState',
-      latestEvent: 'latestEvent'
-    };
-  </script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
   <style>
     :root { color-scheme: dark; }
     body {
@@ -187,8 +168,9 @@
   </div>
 
   <script>
-    // ===== HALL APP (Combined with Firebase Config) =====
+    // ===== HALL APP (Backend Polling) =====
     (() => {
+      const STATE_API = '/api/state';
       const waitingEl = document.getElementById('waiting');
       const displayEl = document.getElementById('display');
       const taskVisualEl = document.getElementById('taskVisual');
@@ -198,14 +180,6 @@
       const tileMetaEl = document.getElementById('tileMeta');
       const boardEl = document.getElementById('board');
       const BOARD_SIZE = 67;
-
-      let db = null;
-      try {
-        const fbApp = firebase.initializeApp(firebaseConfig);
-        db = firebase.database(fbApp);
-      } catch (error) {
-        console.log('Firebase not available');
-      }
 
       function getTaskAsset(taskType) {
         const symbolMap = {
@@ -305,55 +279,23 @@
         renderLeaderboard(state);
       }
 
-      function setupFirebaseListeners() {
-        if (!db) {
-          console.log('Firebase not initialized, falling back to polling');
-          setInterval(readLatest, 2000);
-          return;
-        }
-
-        db.ref(DB_PATHS.gameState).on('value', (snapshot) => {
-          if (snapshot.exists()) {
-            const state = snapshot.val();
-            renderSharedState(state || {});
-          } else {
-            console.log('No gameState data in Firebase yet');
-            renderSharedState({teams: [], board: []});
-          }
-        }, (error) => {
-          console.log('Firebase error reading gameState:', error.message);
-          renderSharedState({teams: [], board: []});
-        });
-
-        db.ref(DB_PATHS.latestEvent).on('value', (snapshot) => {
-          if (snapshot.exists()) {
-            render(snapshot.val());
-          }
-        });
-      }
-
       async function readLatest() {
         try {
-          if (!db) {
-            console.log('Firebase DB not available');
-            renderSharedState({teams: [], board: []});
-            return;
-          }
-          const snapshot = await db.ref(DB_PATHS.gameState).once('value');
-          if (snapshot.exists()) {
-            renderSharedState(snapshot.val() || {teams: [], board: []});
+          const response = await fetch(STATE_API, { cache: 'no-store' });
+          if (response.ok) {
+            const state = await response.json();
+            renderSharedState(state || {teams: [], board: []});
           } else {
-            console.log('No initial data found in Firebase');
             renderSharedState({teams: [], board: []});
           }
         } catch (error) {
-          console.log('Error reading latest state:', error.message);
           renderSharedState({teams: [], board: []});
         }
       }
 
-      setupFirebaseListeners();
+      renderSharedState({teams: [], board: []});
       readLatest();
+      setInterval(readLatest, 1500);
     })();
   </script>
 </body>

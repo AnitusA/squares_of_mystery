@@ -4,12 +4,14 @@ Simple static web game (Snake-like events and tiles) implemented as HTML/CSS/JS.
 
 How to run
 
-- Open [a:/squares_of_mystery/index.html](index.html) in a browser, or run a local static server. Example using Python:
+- Run the Node server:
 
 ```bash
-python -m http.server 8000
-# then open http://localhost:8000/
+npm start
+# then open http://localhost:3000/
 ```
+
+- Open [a:/squares_of_mystery/index.html](index.html) and [a:/squares_of_mystery/hall.html](hall.html) through that server so both devices share the same state.
 
 Features
 
@@ -22,7 +24,7 @@ Features
 - Last 22 tiles contain 9 randomized snakes, 9 empty, with last 4 tiles always empty (no 3-in-a-row)
 - Dice roll to move current team; modal displays events
 - Use real dice and enter the rolled number in the admin UI (`moveSteps`) then press `Move`.
-- The Hall page is display-only and follows the latest tile update from the same origin.
+- The Hall page is display-only and follows the latest tile update from the shared Node backend.
 - Dare, Quiz, Hex, Treasure, and Snake only show an event label plus a `Completed` button.
 
 Notes / next steps

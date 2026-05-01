@@ -5,25 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Square of Mysteries</title>
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
   <script>
-    // ===== FIREBASE CONFIG & AUTH =====
-    const firebaseConfig = {
-      apiKey: "AIzaSyDToHas8Id_5BiotcRirE222DR8ki93b88",
-      authDomain: "squares-of-mystery.firebaseapp.com",
-      projectId: "squares-of-mystery",
-      storageBucket: "squares-of-mystery.firebasestorage.app",
-      messagingSenderId: "91483191813",
-      appId: "1:91483191813:web:700f71b3fc9178f5823a6c",
-      measurementId: "G-5D2BNNHLQX"
-    };
-    
-    const DB_PATHS = {
-      gameState: 'gameState',
-      latestEvent: 'latestEvent'
-    };
-
     // ===== AUTH MODULE =====
     (() => {
       const AUTH_KEY = 'som_auth_role_v1';
@@ -129,19 +111,12 @@
   </div>
 
   <script>
-// ===== ADMIN APP (Combined with Firebase Config & Auth) =====
+// ===== ADMIN APP (Backend Sync) =====
 (() => {
   const BOARD_SIZE = 67;
   const STORAGE_KEY = 'squares_state_v2';
 
-  // Initialize Firebase
-  let db = null;
-  try {
-    const fbApp = firebase.initializeApp(firebaseConfig);
-    db = firebase.database(fbApp);
-  } catch (error) {
-    console.log('Firebase not available, using localStorage only');
-  }
+  const STATE_API = '/api/state';
 
   // elements
   const teamListEl = document.getElementById('teamList');
@@ -237,30 +212,31 @@
     return normalized;
   }
 
-  async function syncStateToFirebase() {
-    if (!db) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      return;
-    }
+  async function syncStateToServer() {
     try {
-      await db.ref(DB_PATHS.gameState).set(state);
+      await fetch(STATE_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state)
+      });
     } catch (error) {
-      console.log('Firebase write failed, data saved locally');
+      console.log('Server write failed, data saved locally');
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
   }
 
-  async function loadStateFromFirebase() {
-    if (!db) return false;
+  async function loadStateFromServer() {
     try {
-      const snapshot = await db.ref(DB_PATHS.gameState).once('value');
-      if (snapshot.exists()) {
-        state = normalizeState(snapshot.val());
+      const response = await fetch(STATE_API, { cache: 'no-store' });
+      if (!response.ok) return false;
+      const nextState = await response.json();
+      if (nextState && typeof nextState === 'object') {
+        state = normalizeState(nextState);
         return true;
       }
       return false;
     } catch (error) {
-      console.log('Firebase read failed');
+      console.log('Server read failed');
       return false;
     }
   }
@@ -269,7 +245,7 @@
     state = normalizeState(state);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     updateSavedLabel();
-    void syncStateToFirebase();
+    void syncStateToServer();
   }
 
   function load() {
@@ -502,11 +478,6 @@
       winners: state.winners
     };
     save();
-    if (db) {
-      try {
-        void db.ref(DB_PATHS.latestEvent).set(state.latestEvent);
-      } catch (error) {}
-    }
   }
 
   function renderHall(){
@@ -591,7 +562,7 @@
 
   async function bootstrap() {
     load();
-    await loadStateFromFirebase();
+      await loadStateFromServer();
     state = normalizeState(state);
     if(!state.board) state.board = generateBoard();
     if(!Array.isArray(state.winners)) state.winners = [];
@@ -617,7 +588,7 @@
     }
     renderBoard(); renderTeams(); renderWinners();
     renderHall();
-    void syncStateToFirebase();
+    void syncStateToServer();
   }
 
   bootstrap();
