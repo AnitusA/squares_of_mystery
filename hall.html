@@ -177,8 +177,8 @@
     const tileTextEl = document.getElementById('tileText');
     const tileMetaEl = document.getElementById('tileMeta');
     const boardEl = document.getElementById('board');
+    const API_STATE_URL = '/api/state';
     const BOARD_SIZE = 67;
-    const stateKey = 'squares_state_v2';
 
     function getTaskAsset(taskType) {
       const symbolMap = {
@@ -211,16 +211,23 @@
       tileMetaEl.textContent = `${payload.team ?? 'Team'} · ${new Date(payload.ts || Date.now()).toLocaleTimeString()}`;
     }
 
-    function readGameState() {
-      try {
-        return JSON.parse(localStorage.getItem(stateKey) || '{}');
-      } catch (error) {
-        return {};
+    function getLatestEvent(sharedState) {
+      if (sharedState && sharedState.latestEvent) return sharedState.latestEvent;
+      if (sharedState && Array.isArray(sharedState.history) && sharedState.history.length) {
+        const last = sharedState.history[sharedState.history.length - 1];
+        return {
+          type: last.type,
+          text: last.text,
+          team: last.team,
+          pos: last.pos,
+          status: 'completed',
+          ts: last.ts
+        };
       }
+      return null;
     }
 
-    function renderBoard() {
-      const state = readGameState();
+    function renderBoard(state) {
       const teams = Array.isArray(state.teams) ? state.teams : [];
       boardEl.innerHTML = '';
       for (let pos = 1; pos <= BOARD_SIZE; pos++) {
@@ -235,8 +242,7 @@
       }
     }
 
-    function renderLeaderboard() {
-      const state = readGameState();
+    function renderLeaderboard(state) {
       const leaderboardEl = document.getElementById('leaderboard');
       const teams = Array.isArray(state.teams) ? state.teams : [];
       
@@ -265,34 +271,25 @@
       });
     }
 
-    function readLatest() {
+    function renderSharedState(state) {
+      render(getLatestEvent(state));
+      renderBoard(state);
+      renderLeaderboard(state);
+    }
+
+    async function readLatest() {
       try {
-        const raw = localStorage.getItem('som_latest_event_v1');
-        if (!raw) return;
-        render(JSON.parse(raw));
+        const response = await fetch(API_STATE_URL, { cache: 'no-store' });
+        if (!response.ok) return;
+        const state = await response.json();
+        renderSharedState(state || {});
       } catch (error) {
-        // ignore malformed storage
+        // ignore fetch errors
       }
     }
 
     readLatest();
-    renderBoard();
-    renderLeaderboard();
-    window.addEventListener('storage', (event) => {
-      if (event.key === 'som_latest_event_v1' && event.newValue) {
-        try {
-          render(JSON.parse(event.newValue));
-        } catch (error) {
-          // ignore malformed storage
-        }
-      }
-      if (event.key === stateKey) {
-        renderBoard();
-        renderLeaderboard();
-      }
-    });
-
-    setInterval(() => window.location.reload(), 2000);
+    setInterval(readLatest, 2000);
 
   </script>
 </body>

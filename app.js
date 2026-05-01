@@ -1,6 +1,7 @@
 (() => {
   const BOARD_SIZE = 67;
   const STORAGE_KEY = 'squares_state_v2';
+  const API_STATE_URL = '/api/state';
 
   // elements
   const teamListEl = document.getElementById('teamList');
@@ -36,7 +37,8 @@
     teams: [],
     currentIndex: 0,
     history: [], // {type,text,team,pos,ts}
-    winners: [] // first three teams to reach 67
+    winners: [], // first three teams to reach 67
+    latestEvent: null
   };
 
   const TEAM_COLORS = [
@@ -85,8 +87,52 @@
     }
   }
 
-  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); updateSavedLabel(); }
-  function load() { const s = localStorage.getItem(STORAGE_KEY); if (s) state = JSON.parse(s); updateSavedLabel(); }
+  function normalizeState(nextState) {
+    const normalized = nextState && typeof nextState === 'object' ? nextState : {};
+    if (!Array.isArray(normalized.teams)) normalized.teams = [];
+    if (!Array.isArray(normalized.history)) normalized.history = [];
+    if (!Array.isArray(normalized.winners)) normalized.winners = [];
+    if (!normalized.version) normalized.version = 2;
+    if (typeof normalized.latestEvent === 'undefined') normalized.latestEvent = null;
+    return normalized;
+  }
+
+  async function syncStateToServer() {
+    try {
+      await fetch(API_STATE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state)
+      });
+    } catch (error) {
+      // ignore offline/server errors
+    }
+  }
+
+  async function loadStateFromServer() {
+    try {
+      const response = await fetch(API_STATE_URL, { cache: 'no-store' });
+      if (!response.ok) return false;
+      state = normalizeState(await response.json());
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function save() {
+    state = normalizeState(state);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    updateSavedLabel();
+    void syncStateToServer();
+  }
+
+  function load() {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if (s) state = normalizeState(JSON.parse(s));
+    updateSavedLabel();
+  }
+
   function updateSavedLabel(){ savedStateEl.textContent = localStorage.getItem(STORAGE_KEY) ? 'yes' : 'no' }
 
   function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min }
@@ -116,7 +162,8 @@
       teams: [],
       currentIndex: 0,
       history: [],
-      winners: []
+      winners: [],
+      latestEvent: null
     };
     diceEl.textContent = '-';
     if (moveSteps) moveSteps.value = '';
@@ -312,17 +359,16 @@
   }
 
   function updateLatestEvent(type, team, tile, status){
-    try{
-      localStorage.setItem('som_latest_event_v1', JSON.stringify({
-        type,
-        text: status === 'completed' ? type : 'hidden',
-        team: team.name,
-        pos: tile.pos,
-        status,
-        ts: Date.now(),
-        winners: state.winners
-      }));
-    }catch(e){ /* ignore shared display storage errors */ }
+    state.latestEvent = {
+      type,
+      text: status === 'completed' ? type : 'hidden',
+      team: team.name,
+      pos: tile.pos,
+      status,
+      ts: Date.now(),
+      winners: state.winners
+    };
+    save();
   }
 
   function renderHall(){
@@ -409,11 +455,25 @@
   // Hall clear
   document.getElementById('clearHall').addEventListener('click', ()=>{ if(confirm('Clear hall history?')){ state.history = []; save(); renderHall(); } });
 
-  // load or initialize
-  load();
-  if(!state.board) state.board = generateBoard();
-  if(!Array.isArray(state.winners)) state.winners = [];
-  refreshColorPicker();
+  async function bootstrap() {
+    load();
+    await loadStateFromServer();
+    state = normalizeState(state);
+    if(!state.board) state.board = generateBoard();
+    if(!Array.isArray(state.winners)) state.winners = [];
+    if(!state.latestEvent && Array.isArray(state.history) && state.history.length) {
+      const last = state.history[state.history.length - 1];
+      state.latestEvent = {
+        type: last.type,
+        text: last.text,
+        team: last.team,
+        pos: last.pos,
+        status: 'completed',
+        ts: last.ts,
+        winners: state.winners
+      };
+    }
+    refreshColorPicker();
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => {
@@ -421,8 +481,12 @@
         window.location.href = 'login.html';
       });
     }
-  renderBoard(); renderTeams(); renderWinners();
-  renderHall();
+    renderBoard(); renderTeams(); renderWinners();
+    renderHall();
+    void syncStateToServer();
+  }
+
+  bootstrap();
 
   // copy/open hall url buttons
 
