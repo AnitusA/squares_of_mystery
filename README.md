@@ -8,7 +8,7 @@ How to run
 
 ```bash
 python server.py
-# then open http://localhost:3000/
+# then open http://localhost:5000/
 ```
 
 - Open [a:/squares_of_mystery/index.html](index.html) and [a:/squares_of_mystery/hall.html](hall.html) through that server so both devices share the same state.
@@ -26,6 +26,35 @@ Features
 - Use real dice and enter the rolled number in the admin UI (`moveSteps`) then press `Move`.
 - The Hall page is display-only and follows the latest tile update from the shared Python backend.
 - Dare, Quiz, Hex, Treasure, and Snake only show an event label plus a `Completed` button.
+
+Running the local server for LAN access
+
+1. (Optional) Create a virtual environment and activate it:
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+2. Install dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+3. Start the server:
+
+```powershell
+python server.py
+```
+
+4. From another device on the same network open:
+
+```
+http://<HOST_IP>:5000/hall.html
+```
+
+Notes: The admin page will attempt to POST events to `/update` on the same host; if the Flask server is not running, the client falls back to `localStorage`.
 
 Notes / next steps
 

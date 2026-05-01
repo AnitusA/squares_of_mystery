@@ -313,7 +313,7 @@
 
   function updateLatestEvent(type, team, tile, status){
     try{
-      localStorage.setItem('som_latest_event_v1', JSON.stringify({
+      const payload = {
         type,
         text: status === 'completed' ? type : 'hidden',
         team: team.name,
@@ -321,7 +321,12 @@
         status,
         ts: Date.now(),
         winners: state.winners
-      }));
+      };
+      localStorage.setItem('som_latest_event_v1', JSON.stringify(payload));
+      // Try to post to a local server at /update so other devices can see the hall
+      try {
+        fetch('/update', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)}).catch(()=>{});
+      } catch(e) { /* ignore network errors */ }
     }catch(e){ /* ignore shared display storage errors */ }
   }
 
