@@ -23,9 +23,9 @@
   const modalComplete = document.getElementById('modalComplete');
   const modalNotComplete = document.getElementById('modalNotComplete');
   const assignTeam = document.getElementById('assignTeam');
-  const assignPos = document.getElementById('assignPos');
+  const assignPoints = document.getElementById('assignPoints');
   const assignBtn = document.getElementById('assignBtn');
-  // randomAssignTeamBtn and assignTeam already declared above
+  const takePointsBtn = document.getElementById('takePointsBtn');
   const randomAssignTeamBtn = document.getElementById('randomAssignTeam');
   const savedStateEl = document.getElementById('savedState');
 
@@ -313,7 +313,7 @@
 
   function updateLatestEvent(type, team, tile, status){
     try{
-      const payload = {
+      localStorage.setItem('som_latest_event_v1', JSON.stringify({
         type,
         text: status === 'completed' ? type : 'hidden',
         team: team.name,
@@ -321,12 +321,7 @@
         status,
         ts: Date.now(),
         winners: state.winners
-      };
-      localStorage.setItem('som_latest_event_v1', JSON.stringify(payload));
-      // Try to post to a local server at /update so other devices can see the hall
-      try {
-        fetch('/update', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)}).catch(()=>{});
-      } catch(e) { /* ignore network errors */ }
+      }));
     }catch(e){ /* ignore shared display storage errors */ }
   }
 
@@ -379,16 +374,23 @@
 
   assignBtn.addEventListener('click', ()=>{
     const idx = getSelectedTeamIndex(assignTeam);
-    const pos = Number(assignPos.value);
+    const pts = Number(assignPoints.value) || 0;
     if (idx < 0) return alert('Select a valid team');
-    if (!pos || pos < 1 || pos > BOARD_SIZE) return alert(`Enter a tile number between 1 and ${BOARD_SIZE}`);
-    // set team position and update state
-    state.teams[idx].pos = Math.min(BOARD_SIZE, Math.max(1, pos));
-    save(); renderTeams(); renderBoard(); renderHall();
-    // optionally update latest event so Hall shows the manual move
-    try { updateLatestEvent('manual-move', state.teams[idx], {pos: state.teams[idx].pos}, 'completed'); } catch(e){}
-    assignPos.value = '';
+    if (!pts || pts < 1 || pts > 10) return alert('Enter points from 1 to 10');
+    changeTeamPoints(idx, pts);
+    assignPoints.value = '';
   });
+
+  if (takePointsBtn) {
+    takePointsBtn.addEventListener('click', ()=>{
+      const idx = getSelectedTeamIndex(assignTeam);
+      const pts = Number(assignPoints.value) || 0;
+      if (idx < 0) return alert('Select a valid team');
+      if (!pts || pts < 1 || pts > 10) return alert('Enter points from 1 to 10');
+      changeTeamPoints(idx, -pts);
+      assignPoints.value = '';
+    });
+  }
 
   if (randomAssignTeamBtn) {
     randomAssignTeamBtn.addEventListener('click', ()=>{

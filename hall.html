@@ -268,21 +268,7 @@
       });
     }
 
-    async function readLatest() {
-      // try server first
-      try {
-        const resp = await fetch('/latest', {cache: 'no-store'});
-        if (resp && resp.ok) {
-          const data = await resp.json();
-          if (data && Object.keys(data).length) {
-            render(data);
-            return;
-          }
-        }
-      } catch (err) {
-        // server not available, fall back to localStorage
-      }
-
+    function readLatest() {
       try {
         const raw = localStorage.getItem('som_latest_event_v1');
         if (!raw) return;
@@ -292,7 +278,6 @@
       }
     }
 
-    // initial render
     readLatest();
     renderBoard();
     renderLeaderboard();
@@ -310,7 +295,7 @@
       }
     });
 
-    setInterval(readLatest, 2000);
+    setInterval(() => window.location.reload(), 2000);
 
   </script>
 </body>
