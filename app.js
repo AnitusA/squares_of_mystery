@@ -23,9 +23,9 @@
   const modalComplete = document.getElementById('modalComplete');
   const modalNotComplete = document.getElementById('modalNotComplete');
   const assignTeam = document.getElementById('assignTeam');
-  const assignPoints = document.getElementById('assignPoints');
+  const assignPos = document.getElementById('assignPos');
   const assignBtn = document.getElementById('assignBtn');
-  const takePointsBtn = document.getElementById('takePointsBtn');
+  // randomAssignTeamBtn and assignTeam already declared above
   const randomAssignTeamBtn = document.getElementById('randomAssignTeam');
   const savedStateEl = document.getElementById('savedState');
 
@@ -379,23 +379,16 @@
 
   assignBtn.addEventListener('click', ()=>{
     const idx = getSelectedTeamIndex(assignTeam);
-    const pts = Number(assignPoints.value) || 0;
+    const pos = Number(assignPos.value);
     if (idx < 0) return alert('Select a valid team');
-    if (!pts || pts < 1 || pts > 10) return alert('Enter points from 1 to 10');
-    changeTeamPoints(idx, pts);
-    assignPoints.value = '';
+    if (!pos || pos < 1 || pos > BOARD_SIZE) return alert(`Enter a tile number between 1 and ${BOARD_SIZE}`);
+    // set team position and update state
+    state.teams[idx].pos = Math.min(BOARD_SIZE, Math.max(1, pos));
+    save(); renderTeams(); renderBoard(); renderHall();
+    // optionally update latest event so Hall shows the manual move
+    try { updateLatestEvent('manual-move', state.teams[idx], {pos: state.teams[idx].pos}, 'completed'); } catch(e){}
+    assignPos.value = '';
   });
-
-  if (takePointsBtn) {
-    takePointsBtn.addEventListener('click', ()=>{
-      const idx = getSelectedTeamIndex(assignTeam);
-      const pts = Number(assignPoints.value) || 0;
-      if (idx < 0) return alert('Select a valid team');
-      if (!pts || pts < 1 || pts > 10) return alert('Enter points from 1 to 10');
-      changeTeamPoints(idx, -pts);
-      assignPoints.value = '';
-    });
-  }
 
   if (randomAssignTeamBtn) {
     randomAssignTeamBtn.addEventListener('click', ()=>{

@@ -1,5 +1,11 @@
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
+try:
+    from flask_cors import CORS
+    _HAS_CORS = True
+except Exception:
+    _HAS_CORS = False
+    def CORS(app, *args, **kwargs):
+        print('Warning: flask_cors not installed — CORS disabled. Install with: pip install flask-cors')
 import threading
 import json
 import os
