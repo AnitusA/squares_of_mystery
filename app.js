@@ -25,6 +25,8 @@
   const assignTeam = document.getElementById('assignTeam');
   const assignPoints = document.getElementById('assignPoints');
   const assignBtn = document.getElementById('assignBtn');
+  const takePointsBtn = document.getElementById('takePointsBtn');
+  const randomAssignTeamBtn = document.getElementById('randomAssignTeam');
   const savedStateEl = document.getElementById('savedState');
 
   // game state
@@ -88,6 +90,23 @@
   function updateSavedLabel(){ savedStateEl.textContent = localStorage.getItem(STORAGE_KEY) ? 'yes' : 'no' }
 
   function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min }
+
+  function getSelectedTeamIndex(selectEl){
+    if (!selectEl || !state.teams.length) return -1;
+    const index = Number(selectEl.value);
+    return Number.isInteger(index) && index >= 0 && index < state.teams.length ? index : -1;
+  }
+
+  function changeTeamPoints(teamIndex, delta){
+    const team = state.teams[teamIndex];
+    if (!team) return false;
+    team.points = Math.max(0, (team.points || 0) + delta);
+    save();
+    renderTeams();
+    renderBoard();
+    renderHall();
+    return true;
+  }
 
   function resetGame(){
     try { localStorage.removeItem(STORAGE_KEY); } catch (error) { /* ignore */ }
@@ -352,9 +371,34 @@
   resetBoardBtn.addEventListener('click', ()=>{ if(confirm('Reset the full game? This clears teams, winners, history, and creates a new board.')){ resetGame(); } });
 
   assignBtn.addEventListener('click', ()=>{
-    const idx = Number(assignTeam.value); const pts = Number(assignPoints.value)||0; if(isNaN(idx)) return;
-    state.teams[idx].points = (state.teams[idx].points||0) + pts; save(); renderTeams(); renderBoard(); renderHall();
+    const idx = getSelectedTeamIndex(assignTeam);
+    const pts = Number(assignPoints.value) || 0;
+    if (idx < 0) return alert('Select a valid team');
+    if (!pts || pts < 1 || pts > 10) return alert('Enter points from 1 to 10');
+    changeTeamPoints(idx, pts);
+    assignPoints.value = '';
   });
+
+  if (takePointsBtn) {
+    takePointsBtn.addEventListener('click', ()=>{
+      const idx = getSelectedTeamIndex(assignTeam);
+      const pts = Number(assignPoints.value) || 0;
+      if (idx < 0) return alert('Select a valid team');
+      if (!pts || pts < 1 || pts > 10) return alert('Enter points from 1 to 10');
+      changeTeamPoints(idx, -pts);
+      assignPoints.value = '';
+    });
+  }
+
+  if (randomAssignTeamBtn) {
+    randomAssignTeamBtn.addEventListener('click', ()=>{
+      if (!state.teams.length) return alert('Add teams first');
+      const randomIndex = randInt(0, state.teams.length - 1);
+      assignTeam.value = String(randomIndex);
+      assignTeam.dispatchEvent(new Event('change'));
+      assignTeam.focus();
+    });
+  }
 
   if (setTurnBtn) {
     setTurnBtn.addEventListener('click', ()=> setManualTurn(turnTeamSelect.value));
